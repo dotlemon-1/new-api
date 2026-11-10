@@ -1,0 +1,2200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开放接口文档 · 第三方对接指南</title>
+<meta name="description" content="AI 网关开放接口文档：鉴权方式、转发接口、任务接口、用量查询与管理 API。">
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f6f8fb; --bg-code:#0f172a; --fg:#0f172a; --fg-soft:#475569; --fg-mute:#64748b;
+  --line:#e2e8f0; --line-soft:#eef2f7; --brand:#2563eb; --brand-soft:#eff6ff; --brand-line:#bfdbfe;
+  --ok:#059669; --ok-soft:#ecfdf5; --warn:#b45309; --warn-soft:#fffbeb; --danger:#dc2626; --danger-soft:#fef2f2;
+  --purple:#7c3aed; --purple-soft:#f5f3ff;
+  --radius:10px; --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px -12px rgba(15,23,42,.15);
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1120; --bg-soft:#111a2e; --bg-code:#060b16; --fg:#e2e8f0; --fg-soft:#a9b6c9; --fg-mute:#8595ab;
+    --line:#1e293b; --line-soft:#172033; --brand:#60a5fa; --brand-soft:#12213d; --brand-line:#1e3a5f;
+    --ok:#34d399; --ok-soft:#0b2a22; --warn:#fbbf24; --warn-soft:#2a2109; --danger:#f87171; --danger-soft:#2c1414;
+    --purple:#a78bfa; --purple-soft:#1e1636;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:var(--bg-soft);border:1px solid var(--line);border-radius:5px;padding:.1em .38em;word-break:break-word}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.65;color:#e2e8f0;word-break:normal;white-space:pre}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;height:58px;padding:0 22px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 0 0 4px var(--brand-soft)}
+.brand small{font-weight:500;color:var(--fg-mute);font-size:12px}
+.spacer{flex:1}
+.search{position:relative}
+.search input{width:260px;max-width:38vw;height:34px;padding:0 12px 0 32px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg-soft);color:var(--fg);font-size:13px;outline:none}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.search svg{position:absolute;left:10px;top:9px;width:14px;height:14px;fill:var(--fg-mute)}
+.menu-btn{display:none;border:1px solid var(--line);background:var(--bg-soft);color:var(--fg);border-radius:8px;height:34px;padding:0 10px;cursor:pointer}
+
+/* layout */
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:0;max-width:1440px;margin:0 auto}
+.sidebar{position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;padding:20px 14px 60px 22px;border-right:1px solid var(--line-soft)}
+.sidebar nav{font-size:13.5px}
+.sidebar .grp{margin:0 0 4px;padding:14px 10px 6px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-mute)}
+.sidebar a{display:block;padding:5px 10px;border-radius:6px;color:var(--fg-soft);line-height:1.45}
+.sidebar a:hover{background:var(--bg-soft);text-decoration:none;color:var(--fg)}
+.sidebar a.lv3{padding-left:24px;font-size:12.8px;color:var(--fg-mute)}
+.sidebar a.lv2{margin-top:10px;font-weight:600;color:var(--fg)}
+.sidebar a.lv2:first-child{margin-top:0}
+.sidebar a.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.sidebar .hidden{display:none}
+.sidebar .empty{padding:10px;color:var(--fg-mute);font-size:13px}
+
+main{min-width:0;padding:34px 46px 120px}
+.page-title{margin:0 0 6px;font-size:30px;letter-spacing:-.5px}
+.page-sub{margin:0 0 26px;color:var(--fg-mute);font-size:14.5px}
+
+h2{margin:52px 0 14px;font-size:23px;letter-spacing:-.2px;padding-top:6px;scroll-margin-top:80px}
+h2::before{content:"";display:block;width:34px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--brand),#7c3aed);margin-bottom:12px}
+h3{margin:34px 0 10px;font-size:17.5px;scroll-margin-top:78px}
+h4{margin:24px 0 8px;font-size:15px}
+p{margin:10px 0;color:var(--fg-soft)}
+ul,ol{margin:10px 0;padding-left:22px;color:var(--fg-soft)}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+
+/* badges */
+.m{display:inline-flex;align-items:center;justify-content:center;min-width:60px;height:23px;padding:0 8px;border-radius:6px;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.4px;color:#fff}
+.m.get{background:#059669}.m.post{background:#2563eb}.m.put{background:#b45309}.m.patch{background:#7c3aed}.m.delete{background:#dc2626}
+.tag{display:inline-flex;align-items:center;height:23px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.tag.tok{background:var(--brand-soft);color:var(--brand);border:1px solid var(--brand-line)}
+.tag.jwt{background:var(--purple-soft);color:var(--purple);border:1px solid color-mix(in srgb,var(--purple) 30%,transparent)}
+.tag.pub{background:var(--ok-soft);color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
+.tag.adm{background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.tag.ws{background:var(--bg-soft);color:var(--fg-soft);border:1px solid var(--line)}
+
+/* endpoint card */
+.ep{border:1px solid var(--line);border-radius:var(--radius);margin:14px 0 18px;overflow:hidden;background:var(--bg)}
+.ep-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px;background:var(--bg-soft);border-bottom:1px solid var(--line-soft)}
+.ep-head .path{font-family:var(--mono);font-size:13.5px;font-weight:600;background:none;border:0;padding:0;color:var(--fg)}
+.ep-head .desc{color:var(--fg-mute);font-size:13px}
+.ep-body{padding:14px 16px 16px}
+.ep-body > :first-child{margin-top:0}
+.ep-body > :last-child{margin-bottom:0}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;margin:12px 0 6px;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line-soft)}
+.tbl thead th{background:var(--bg-soft);color:var(--fg-soft);font-weight:600;font-size:12.5px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl tbody tr:hover{background:color-mix(in srgb,var(--bg-soft) 55%,transparent)}
+.tbl td:first-child code{background:none;border:0;padding:0;color:var(--brand);font-weight:600}
+.tbl .req{color:var(--danger);font-weight:700}
+.tbl .opt{color:var(--fg-mute)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:12px 0}
+.table-wrap .tbl{margin:0}
+.table-wrap .tbl thead th{position:relative}
+
+/* code */
+.code{position:relative;margin:12px 0;border-radius:var(--radius);overflow:hidden;background:var(--bg-code);border:1px solid #1e293b}
+.code .copy{position:absolute;top:8px;right:8px;z-index:2;border:1px solid #334155;background:#1e293b;color:#cbd5e1;
+  font-size:11.5px;padding:3px 9px;border-radius:6px;cursor:pointer;font-family:var(--sans)}
+.code .copy:hover{background:#334155;color:#fff}
+.code pre{margin:0;padding:14px 16px;overflow:auto;max-height:520px}
+.code .lang{position:absolute;left:14px;top:-1px;transform:translateY(-50%);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:#94a3b8;background:var(--bg-code);padding:0 6px}
+.code.has-lang pre{padding-top:22px}
+
+/* tabs */
+.tabs{margin:14px 0}
+.tabbar{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:0}
+.tabbar button{border:0;background:none;color:var(--fg-mute);font-size:13px;padding:7px 12px;cursor:pointer;border-bottom:2px solid transparent;font-family:var(--sans)}
+.tabbar button.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+.tabs .pane{display:none}
+.tabs .pane.active{display:block}
+.tabs .code{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
+
+/* callouts */
+.note,.warn,.tip,.danger{border-radius:var(--radius);padding:11px 14px;margin:14px 0;font-size:13.8px;border:1px solid}
+.note{background:var(--brand-soft);border-color:var(--brand-line);color:var(--fg-soft)}
+.tip{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 28%,transparent);color:var(--fg-soft)}
+.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 32%,transparent);color:var(--fg-soft)}
+.danger{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 28%,transparent);color:var(--fg-soft)}
+.note b,.warn b,.tip b,.danger b{color:var(--fg)}
+
+/* misc */
+.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:6px 14px;font-size:13.8px;margin:10px 0}
+.kv dt{color:var(--fg-mute)}
+.kv dd{margin:0;color:var(--fg-soft)}
+.anchor{opacity:0;margin-left:6px;font-weight:400;color:var(--fg-mute);font-size:.75em}
+h2:hover .anchor,h3:hover .anchor{opacity:1}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:1100px){.grid-2{grid-template-columns:1fr}}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:58px;left:0;bottom:0;width:290px;height:auto;background:var(--bg);z-index:45;
+    transform:translateX(-102%);transition:transform .2s ease;box-shadow:var(--shadow)}
+  .sidebar.open{transform:none}
+  .menu-btn{display:inline-flex;align-items:center}
+  main{padding:24px 18px 100px}
+  .search input{width:44vw}
+  .page-title{font-size:24px}
+}
+@media print{
+  .topbar,.sidebar,.code .copy,.anchor{display:none!important}
+  .layout{display:block}
+  main{padding:0}
+  .ep,.code,.tbl{break-inside:avoid}
+  a{color:inherit}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="展开目录">☰</button>
+  <div class="brand"><span class="dot"></span>开放接口文档 <small>第三方对接指南</small></div>
+  <div class="spacer"></div>
+  <div class="search">
+    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <input id="search" type="search" placeholder="搜索接口 / 参数 / 关键字" autocomplete="off">
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><nav id="toc"></nav></aside>
+  <main id="content">
+
+    <h1 class="page-title">开放接口文档</h1>
+    <p class="page-sub">面向第三方系统的对接说明：鉴权方式、转发接口、异步任务、用量查询与管理 API。<br>
+      文档版本 <code>v1.0</code> · 服务端版本请以 <code>GET /api/status</code> 返回的 <code>version</code> 为准。</p>
+
+    <div class="note">
+      <b>阅读顺序建议：</b>先阅读 <a href="#auth">鉴权方式</a> 与 <a href="#conventions">通用约定</a>，再按业务选择
+      <a href="#relay">转发接口</a>（同步对话/图片/音频）或 <a href="#tasks">异步任务接口</a>（视频/长任务），
+      最后参考 <a href="#examples">调用示例</a>。
+    </div>
+
+    <h2 id="overview">1. 概述</h2>
+    <p>本服务是一个 AI API 网关：对客户端暴露统一的 OpenAI / Anthropic / Gemini 兼容协议，对上游聚合多家模型供应商。第三方只需对接本服务的地址与令牌，无需关心上游渠道。</p>
+
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead><tr><th>接口层</th><th>路径前缀</th><th>典型用途</th><th>鉴权凭证</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#relay">转发接口</a></td><td><code>/v1</code>、<code>/v1beta</code>、<code>/mj</code></td><td>对话、嵌入、重排、音频、图像、实时语音</td><td><code>sk-</code> 站点令牌</td></tr>
+          <tr><td><a href="#tasks">任务接口</a></td><td><code>/v1/tasks</code>、<code>/v1/videos</code>、<code>/v1/images</code>、<code>/v1/responses</code></td><td>视频生成、长耗时任务、任务产物下载</td><td><code>sk-</code> 站点令牌</td></tr>
+          <tr><td><a href="#usage">用量查询</a></td><td><code>/api/usage</code>、<code>/api/log</code>、<code>/dashboard/billing</code></td><td>令牌额度、调用日志、账单用量</td><td><code>sk-</code> 站点令牌（只读）</td></tr>
+          <tr><td><a href="#management">管理 API</a></td><td><code>/api</code></td><td>账号、令牌、渠道、用户、日志、系统设置</td><td>登录 JWT 或 <code>nap_</code> PAT</td></tr>
+          <tr><td><a href="#public">公开接口</a></td><td><code>/api</code></td><td>站点状态、公告、定价、支付回调</td><td>无</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>基础信息</h4>
+    <dl class="kv">
+      <dt>Base URL</dt><dd><code>https://&lt;你的站点域名&gt;</code>（本地默认 <code>http://localhost:3000</code>）</dd>
+      <dt>传输协议</dt><dd>生产环境必须使用 HTTPS；请求与响应体均为 UTF-8</dd>
+      <dt>数据格式</dt><dd>请求 <code>Content-Type: application/json</code>；音频/图片编辑使用 <code>multipart/form-data</code></dd>
+      <dt>时间字段</dt><dd>除特别标注 <code>_ms</code> 外，均为 Unix 秒级时间戳（整数）</dd>
+      <dt>流式响应</dt><dd><code>Content-Type: text/event-stream</code>，以 <code>data: [DONE]</code> 结束</dd>
+      <dt>字符编码</dt><dd>UTF-8</dd>
+    </dl>
+
+    <div class="tip">
+      <b>兼容性：</b>OpenAI SDK、Anthropic SDK、Google GenAI SDK 可直接把 <code>base_url</code> 指向本服务域名使用，只需替换 API Key 与模型名。
+    </div>
+
+    <h2 id="auth">2. 鉴权方式</h2>
+    <p>本服务有四种凭证，用途完全不同，请勿混用：</p>
+
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead><tr><th>凭证</th><th>格式</th><th>适用接口</th><th>有效期</th></tr></thead>
+        <tbody>
+          <tr><td>站点令牌</td><td><code>sk-</code> + 48 位字母数字</td><td><code>/v1</code>、<code>/v1beta</code>、<code>/mj</code>、用量查询</td><td>自定义，<code>-1</code> 表示永不过期</td></tr>
+          <tr><td>登录 Access Token</td><td>JWT</td><td><code>/api</code> 面板接口</td><td>15 分钟</td></tr>
+          <tr><td>个人访问令牌（PAT）</td><td><code>nap_</code> + 43 位 base62</td><td><code>/api</code> 面板接口（按 scope 授权）</td><td>1 小时 ~ 永久</td></tr>
+          <tr><td>安全验证凭证</td><td><code>X-Security-Proof</code> 头</td><td>敏感管理操作（改密、2FA、查看渠道密钥等）</td><td>1 分钟</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="auth-token">2.1 站点令牌（sk-）</h3>
+    <p>站点令牌用于调用所有 AI 转发接口，按令牌计量额度、限制模型与来源 IP。</p>
+    <h4>获取方式</h4>
+    <ol>
+      <li>登录控制台，进入「令牌」页面，点击「添加令牌」；</li>
+      <li>设置名称、额度、过期时间、可用模型、IP 白名单、分组后保存；</li>
+      <li>复制令牌 key，调用时拼接为 <code>sk-&lt;key&gt;</code>。</li>
+    </ol>
+    <p>也可通过管理 API 创建：<a href="#ep-token-create"><code>POST /api/token/</code></a>。</p>
+
+    <h4>请求头</h4>
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead><tr><th>协议</th><th>请求头 / 参数</th><th>示例</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI 兼容（推荐）</td><td><code>Authorization: Bearer sk-xxx</code></td><td><code>Authorization: Bearer sk-1a2b...</code></td></tr>
+          <tr><td>Anthropic 原生</td><td><code>x-api-key: sk-xxx</code></td><td>配合 <code>anthropic-version</code> 头</td></tr>
+          <tr><td>Gemini 原生</td><td><code>x-goog-api-key: sk-xxx</code> 或 <code>?key=sk-xxx</code></td><td>仅 <code>/v1/models</code>、<code>/v1beta/*</code> 支持 query 传参</td></tr>
+          <tr><td>Midjourney</td><td><code>mj-api-secret: sk-xxx</code></td><td>也兼容 <code>Authorization</code></td></tr>
+          <tr><td>WebSocket</td><td><code>Sec-WebSocket-Protocol: openai-insecure-api-key.sk-xxx</code></td><td>可与其他子协议用逗号并列</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code>curl https://api.example.com/v1/chat/completions \
+  -H "Authorization: Bearer sk-1a2b3c4d5e6f7g8h9i0j" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"你好"}]}'</code></pre></div>
+
+    <h4>令牌校验项</h4>
+    <ul>
+      <li><b>状态</b>：已禁用的令牌直接拒绝；</li>
+      <li><b>过期时间</b>：过期后拒绝（只读用量接口除外）；</li>
+      <li><b>剩余额度</b>：不足时拒绝（<code>unlimited_quota=true</code> 不受限）；</li>
+      <li><b>模型限制</b>：令牌开启模型限制时，仅允许白名单内模型；</li>
+      <li><b>IP 白名单</b>：配置后仅允许指定 IP/CIDR 调用；</li>
+      <li><b>分组</b>：令牌可固定或自动选择分组，影响可用模型与倍率；</li>
+      <li><b>用户状态</b>：用户被封禁时其所有令牌不可用。</li>
+    </ul>
+
+    <div class="warn">
+      <b>安全提示：</b>站点令牌等同于账户额度，请仅在服务端保存，不要写入前端代码或公开仓库；泄露后请立即在控制台删除。
+    </div>
+
+    <h3 id="auth-login">2.2 控制台登录（JWT）</h3>
+    <p>浏览器或受信脚本可先登录换取短期 Access Token，再调用 <code>/api</code> 管理接口。</p>
+
+    <div class="ep" id="ep-login">
+      <div class="ep-head">
+        <span class="m post">POST</span><code class="path">/api/user/login</code>
+        <span class="tag pub">无需鉴权</span><span class="desc">账号密码登录</span>
+      </div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>username</td><td>string</td><td class="req">是</td><td>用户名</td></tr>
+            <tr><td>password</td><td>string</td><td class="opt">条件</td><td>未开启密码加密时必填</td></tr>
+            <tr><td>password_encrypted</td><td>string</td><td class="opt">条件</td><td>开启密码加密时必填，见 <code>GET /api/user/login/encryption-key</code></td></tr>
+            <tr><td>encryption_key_id</td><td>string</td><td class="opt">条件</td><td>与 <code>password_encrypted</code> 配套的 <code>kid</code></td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": {
+    "access_token": "eyJhbGciOi...",
+    "token_type": "Bearer",
+    "access_expires_at": 1730000000,
+    "user": { "id": 1, "username": "root", "role": 100 },
+    "session": {
+      "sid": "3f1c...", "current": true, "login_method": "password",
+      "ip": "203.0.113.7", "user_agent": "curl/8.0",
+      "created_at": 1730000000, "last_active_at": 1730000000, "expires_at": 1732592000
+    }
+  }
+}</code></pre></div>
+        <p>响应同时下发 <code>HttpOnly</code> Refresh Cookie（<code>Path=/api/user/auth</code>，最长 30 天）。若账号启用了 2FA、Passkey 或邮箱验证，<code>data</code> 会是登录挑战：</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "data": {
+    "require_verification": true,
+    "flow_token": "9f2c...",
+    "expires_at": 1730000300,
+    "methods": [ { "method": "2fa", "available": true }, { "method": "password", "available": true } ]
+  }
+}</code></pre></div>
+        <p>随后调用 <code>POST /api/user/login/2fa</code>（或 <code>POST /api/user/login/verify</code>）携带 <code>flow_token</code> 与验证码完成登录。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-refresh">
+      <div class="ep-head">
+        <span class="m post">POST</span><code class="path">/api/user/auth/refresh</code>
+        <span class="tag jwt">Refresh Cookie</span><span class="desc">轮换刷新令牌</span>
+      </div>
+      <div class="ep-body">
+        <p>使用浏览器 Cookie 中的 Refresh Token 换取新的 Access Token，并轮换 Refresh Token。返回结构与登录一致。</p>
+        <ul>
+          <li>可选请求头 <code>X-Auth-Session: &lt;sid&gt;</code>，与 Cookie 不一致时返回 <code>409 AUTH_SESSION_MISMATCH</code>，且不轮换任何凭证；</li>
+          <li>启用 <code>SESSION_COOKIE_SECURE=true</code> 时校验 <code>Origin</code>，跨域脚本调用会失败；</li>
+          <li>同一 Refresh Token 并发使用会确定性恢复同一后继 Token，不会互相踢下线。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-logout">
+      <div class="ep-head">
+        <span class="m post">POST</span><code class="path">/api/user/auth/logout</code>
+        <span class="tag jwt">Refresh Cookie</span><span class="desc">登出并撤销当前会话</span>
+      </div>
+      <div class="ep-body"><p>撤销当前登录会话并清除 Cookie；可同时携带 <code>Authorization: Bearer</code>。</p></div>
+    </div>
+
+    <h3 id="auth-pat">2.3 个人访问令牌（PAT）</h3>
+    <p>PAT 适合服务端自动化调用管理 API，无需保存账号密码，也不受浏览器会话限制。</p>
+    <ul>
+      <li>格式：<code>nap_</code> + 43 位 base62 随机串，明文仅在创建时返回一次；</li>
+      <li>创建需要<b>浏览器会话</b>，并完成一次 <code>access_token.generate</code> 安全验证；</li>
+      <li>每个用户最多 20 个，默认 30 天过期，最短 1 小时，可选永不过期；</li>
+      <li>每个请求都会重新读取角色与权限，管理员权限被撤回后对应 scope 立即失效。</li>
+    </ul>
+    <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code>curl https://api.example.com/api/user/self \
+  -H "Authorization: Bearer nap_4f9c2b1e7a..."</code></pre></div>
+
+    <h4>Scope 一览（<code>resource:action</code>）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>资源</th><th>可用动作</th><th>最低角色</th><th>覆盖范围</th></tr></thead>
+      <tbody>
+        <tr><td>profile</td><td>read / write</td><td>普通用户</td><td>个人资料、可用模型</td></tr>
+        <tr><td>api_key</td><td>read / write</td><td>普通用户</td><td>站点令牌管理</td></tr>
+        <tr><td>usage</td><td>read</td><td>普通用户</td><td>个人用量</td></tr>
+        <tr><td>wallet</td><td>read / write</td><td>普通用户</td><td>余额、充值、签到、订阅</td></tr>
+        <tr><td>account_security</td><td>read / write</td><td>普通用户</td><td>2FA、Passkey、账号绑定、注销</td></tr>
+        <tr><td>user</td><td>read / write</td><td>管理员</td><td>用户管理、额度调整</td></tr>
+        <tr><td>billing</td><td>read / write</td><td>管理员</td><td>充值记录、充值确认</td></tr>
+        <tr><td>model</td><td>read / write</td><td>管理员</td><td>模型元数据</td></tr>
+        <tr><td>deployment</td><td>read / write</td><td>管理员</td><td>部署管理</td></tr>
+        <tr><td>log</td><td>read</td><td>管理员</td><td>日志查询</td></tr>
+        <tr><td>redemption</td><td>read / write</td><td>管理员</td><td>兑换码</td></tr>
+        <tr><td>group</td><td>read / write</td><td>管理员</td><td>分组</td></tr>
+        <tr><td>channel</td><td>read / operate / write / sensitive_write / secret_view</td><td>管理员</td><td>渠道管理</td></tr>
+        <tr><td>audit</td><td>read</td><td>管理员</td><td>审计日志</td></tr>
+        <tr><td>task_plugin</td><td>bind</td><td>管理员</td><td>任务插件绑定</td></tr>
+        <tr><td>option / plugin / ops</td><td>read / write</td><td>Root</td><td>系统设置、插件、运维</td></tr>
+        <tr><td>admin.user.*</td><td>delete / manage / update / create / passkey.reset / 2fa.disable / binding.clear</td><td>管理员</td><td>高风险用户操作（需二次验证）</td></tr>
+      </tbody>
+    </table></div>
+    <p>未声明 scope 的路由一律拒绝（<code>403 ACCESS_TOKEN_ROUTE_UNDECLARED</code>）；scope 不足返回 <code>403 ACCESS_TOKEN_SCOPE_DENIED</code>，并在 <code>message</code> 中给出所需 scope。</p>
+
+    <div class="warn"><b>限制：</b>PAT 不能创建、改名、撤销 PAT，也不能管理登录会话——这些接口只接受浏览器会话。</div>
+
+    <h3 id="auth-proof">2.4 二次验证（Security Proof）</h3>
+    <p>修改密码、启用/关闭 2FA、注册 Passkey、删除用户、查看渠道密钥等操作需要额外的二次验证凭证。</p>
+    <div class="ep" id="ep-verify-methods">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/verify/methods</code><span class="tag jwt">JWT / PAT</span><span class="desc">查询可用验证方式</span></div>
+      <div class="ep-body"><p>查询参数 <code>scope</code> 指定操作，返回可用验证方式列表与要求。</p></div>
+    </div>
+    <div class="ep" id="ep-verify">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/api/verify</code><span class="tag jwt">JWT / PAT</span><span class="desc">完成验证并换取 Proof</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>method</td><td>string</td><td class="req">是</td><td><code>password</code> / <code>2fa</code> / <code>passkey</code> / <code>oauth</code></td></tr>
+            <tr><td>scope</td><td>string</td><td class="req">是</td><td>目标操作，如 <code>channel.key.read</code></td></tr>
+            <tr><td>context</td><td>object</td><td class="opt">否</td><td>操作上下文，如 <code>{"user_id":12}</code></td></tr>
+            <tr><td>code</td><td>string</td><td class="opt">条件</td><td>2FA 动态码</td></tr>
+            <tr><td>password</td><td>string</td><td class="opt">条件</td><td>密码验证方式</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "data": { "proof_token": "sp_9c1f...", "expires_at": 1730000060, "method": "password", "scope": "channel.key.read" }
+}</code></pre></div>
+        <p>随后在目标请求中携带 <code>X-Security-Proof: sp_9c1f...</code>，凭证 1 分钟内有效且只能用于绑定的 scope 与上下文。</p>
+      </div>
+    </div>
+
+    <h3 id="auth-ws">2.5 WebSocket 鉴权</h3>
+    <p>实时接口（<code>/v1/realtime</code>、<code>/v1/responses</code> WebSocket）通过子协议传递密钥：</p>
+    <div class="code has-lang" data-lang="js"><button class="copy">复制</button><pre><code>const ws = new WebSocket("wss://api.example.com/v1/realtime?model=gpt-4o-realtime-preview", [
+  "realtime",
+  "openai-insecure-api-key.sk-1a2b3c4d5e6f7g8h9i0j"
+]);
+// 服务端从 Sec-WebSocket-Protocol 中解析 openai-insecure-api-key.* 作为令牌</code></pre></div>
+
+    <h2 id="conventions">3. 通用约定</h2>
+
+    <h3 id="resp-envelope">3.1 响应结构</h3>
+    <p><b>转发接口</b>遵循对应上游协议：成功时返回原生结构，失败时统一返回 OpenAI 错误结构：</p>
+    <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "error": {
+    "message": "当前令牌额度不足",
+    "type": "new_api_error",
+    "param": "",
+    "code": "insufficient_user_quota"
+  }
+}</code></pre></div>
+    <p><b>管理 API</b>统一使用如下包络：</p>
+    <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "success": true, "message": "", "data": { } }</code></pre></div>
+    <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "success": false, "message": "无权进行此操作，权限不足", "code": "ACCESS_TOKEN_SCOPE_DENIED" }</code></pre></div>
+
+    <h3 id="pagination">3.2 分页</h3>
+    <p>列表类接口统一使用查询参数：</p>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>p</td><td>int</td><td>1</td><td>页码，从 1 开始</td></tr>
+        <tr><td>page_size</td><td>int</td><td>10</td><td>每页条数，最大 100（兼容 <code>ps</code>、<code>size</code>）</td></tr>
+      </tbody>
+    </table></div>
+    <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": { "page": 1, "page_size": 20, "total": 137, "items": [ ] }
+}</code></pre></div>
+
+    <h3 id="errors">3.3 状态码与错误</h3>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>HTTP</th><th>含义</th><th>处理建议</th></tr></thead>
+      <tbody>
+        <tr><td>200</td><td>成功</td><td>管理 API 的业务失败也可能返回 200，需判断 <code>success</code></td></tr>
+        <tr><td>400</td><td>请求参数错误</td><td>检查 <code>error.message</code> / <code>message</code></td></tr>
+        <tr><td>401</td><td>未提供凭证或凭证无效</td><td>检查 <code>Authorization</code> 与令牌状态</td></tr>
+        <tr><td>403</td><td>无权限、IP 受限、模型受限、额度不足</td><td>查看 <code>error.code</code> 定位原因</td></tr>
+        <tr><td>404</td><td>路径或资源不存在</td><td>核对模型名与路径</td></tr>
+        <tr><td>429</td><td>触发限流</td><td>退避重试，见 <a href="#ratelimit">限流</a></td></tr>
+        <tr><td>500 / 502 / 503</td><td>服务或上游异常</td><td>指数退避重试；持续失败联系管理员</td></tr>
+        <tr><td>501</td><td>该协议端点未实现</td><td>参考 <a href="#relay-misc">未实现端点</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="ratelimit">3.4 限流</h3>
+    <p>服务端按不同维度限流，触发后返回 429：</p>
+    <ul>
+      <li><b>全局 API 限流</b>：按 IP 限制 <code>/api</code> 请求频率；</li>
+      <li><b>敏感操作限流</b>：登录、注册、支付、验证码等单独更严格的阈值；</li>
+      <li><b>模型请求限流</b>：按「用户 + 模型」限制成功请求数（可在系统设置中配置）；</li>
+      <li><b>搜索限流</b>：日志、令牌搜索接口。</li>
+    </ul>
+    <p>多节点部署时若共用 Redis，限流额度在节点间共享；否则按节点独立计数。</p>
+
+    <h3 id="cors">3.5 跨域与压缩</h3>
+    <p><code>/v1</code> 与 <code>/api</code> 均启用宽松 CORS（允许任意 Origin 与凭证），浏览器可直接调用；<code>/api</code> 同时启用 gzip 响应压缩。</p>
+
+    <h3 id="model-routing">3.6 模型与渠道选择</h3>
+    <ul>
+      <li>请求体中的 <code>model</code> 必须是某个启用渠道已配置的模型；否则返回无可用渠道错误；</li>
+      <li>令牌的「分组」与「模型限制」会进一步约束可路由的渠道；</li>
+      <li>同一模型可被多个渠道承载，网关按优先级、权重与负载自动选择，并在失败时重试；</li>
+      <li>通过 <a href="#ep-models"><code>GET /v1/models</code></a> 获取当前令牌可见的模型列表。</li>
+    </ul>
+
+    <h2 id="relay">4. 转发接口（Relay）</h2>
+    <p>转发接口把客户端请求转换为各上游协议。除特别说明外，全部使用 <a href="#auth-token">站点令牌</a> 鉴权，路径与请求体遵循对应上游官方协议。</p>
+
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>需求</th><th>推荐端点</th><th>协议</th></tr></thead>
+      <tbody>
+        <tr><td>对话 / 工具调用 / 多模态</td><td><a href="#ep-chat"><code>POST /v1/chat/completions</code></a></td><td>OpenAI</td></tr>
+        <tr><td>Claude 原生客户端</td><td><a href="#ep-messages"><code>POST /v1/messages</code></a></td><td>Anthropic</td></tr>
+        <tr><td>Gemini 原生客户端</td><td><a href="#ep-gemini"><code>POST /v1beta/models/{model}:generateContent</code></a></td><td>Gemini</td></tr>
+        <tr><td>有状态对话 / 智能体</td><td><a href="#ep-responses"><code>POST /v1/responses</code></a></td><td>OpenAI Responses</td></tr>
+        <tr><td>向量化</td><td><a href="#ep-embeddings"><code>POST /v1/embeddings</code></a></td><td>OpenAI</td></tr>
+        <tr><td>检索重排</td><td><a href="#ep-rerank"><code>POST /v1/rerank</code></a></td><td>Jina / Cohere 风格</td></tr>
+        <tr><td>语音转写 / 合成</td><td><a href="#ep-audio"><code>POST /v1/audio/*</code></a></td><td>OpenAI</td></tr>
+        <tr><td>图片生成 / 编辑</td><td><a href="#ep-images"><code>POST /v1/images/*</code></a></td><td>OpenAI Images</td></tr>
+        <tr><td>视频生成</td><td><a href="#ep-videos"><code>POST /v1/videos</code></a></td><td>OpenAI Videos</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="ep-models">4.1 模型列表</h3>
+
+    <div class="ep" id="ep-models-openai">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/models</code><span class="tag tok">sk- 令牌</span><span class="desc">获取当前令牌可用模型</span></div>
+      <div class="ep-body">
+        <p>返回结果已按令牌分组、模型限制过滤，仅包含当前令牌真正可调用的模型。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>位置</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>key</td><td>query</td><td class="opt">否</td><td>Gemini 风格传参，等价于 <code>Authorization</code></td></tr>
+            <tr><td>x-api-key + anthropic-version</td><td>header</td><td class="opt">否</td><td>存在时返回 Anthropic 模型列表结构</td></tr>
+            <tr><td>x-goog-api-key</td><td>header</td><td class="opt">否</td><td>存在时返回 Gemini 模型列表结构</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o-mini",
+      "object": "model",
+      "created": 1626777600,
+      "owned_by": "openai",
+      "supported_endpoint_types": ["openai", "openai-response", "embeddings"]
+    }
+  ]
+}</code></pre></div>
+        <p><code>supported_endpoint_types</code> 取值：<code>openai</code>、<code>openai-response</code>、<code>openai-response-compact</code>、<code>openai-alpha-search</code>、<code>deepseek-tools-search</code>、<code>deepseek-tools-fetch</code>、<code>anthropic</code>、<code>gemini</code>、<code>jina-rerank</code>、<code>image-generation</code>、<code>embeddings</code>、<code>openai-video</code>。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-models-retrieve">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/models/{model}</code><span class="tag tok">sk- 令牌</span><span class="desc">查询单个模型</span></div>
+      <div class="ep-body"><p>模型不存在时返回 200 且带 <code>error.code = model_not_found</code>。</p></div>
+    </div>
+
+    <div class="ep" id="ep-models-gemini">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1beta/models</code><span class="tag tok">sk- 令牌</span><span class="desc">Gemini 模型列表</span></div>
+      <div class="ep-body">
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "models": [ { "name": "gemini-2.0-flash", "displayName": "gemini-2.0-flash" } ],
+  "nextPageToken": null
+}</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-models-openai-compat">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1beta/openai/models</code><span class="tag tok">sk- 令牌</span><span class="desc">Gemini 兼容层的 OpenAI 模型列表</span></div>
+      <div class="ep-body"><p>返回 OpenAI 结构，便于把 Gemini 兼容客户端指向本服务。</p></div>
+    </div>
+
+    <h3 id="ep-chat">4.2 对话补全 Chat Completions</h3>
+    <div class="ep" id="ep-chat-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/chat/completions</code><span class="tag tok">sk- 令牌</span><span class="desc">OpenAI 兼容对话</span></div>
+      <div class="ep-body">
+        <p>支持流式（SSE）与非流式；支持工具调用、JSON 输出、多模态输入。不同上游特有的字段（如 <code>thinking</code>、<code>enable_search</code>、<code>web_search_options</code>）会按渠道能力透传。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>模型名，须在渠道中已配置</td></tr>
+            <tr><td>messages</td><td>array</td><td class="req">是</td><td>消息数组，元素含 <code>role</code>（system/user/assistant/tool）与 <code>content</code></td></tr>
+            <tr><td>stream</td><td>boolean</td><td class="opt">否</td><td>默认 <code>false</code>；<code>true</code> 时返回 SSE</td></tr>
+            <tr><td>stream_options</td><td>object</td><td class="opt">否</td><td><code>{"include_usage": true}</code> 在流末尾追加用量块</td></tr>
+            <tr><td>max_tokens</td><td>integer</td><td class="opt">否</td><td>最大生成 token 数（部分新模型改用 <code>max_completion_tokens</code>）</td></tr>
+            <tr><td>max_completion_tokens</td><td>integer</td><td class="opt">否</td><td>推理模型推荐</td></tr>
+            <tr><td>temperature</td><td>number</td><td class="opt">否</td><td>0 ~ 2，默认 1</td></tr>
+            <tr><td>top_p</td><td>number</td><td class="opt">否</td><td>核采样</td></tr>
+            <tr><td>n</td><td>integer</td><td class="opt">否</td><td>候选数量，影响计费</td></tr>
+            <tr><td>stop</td><td>string / array</td><td class="opt">否</td><td>停止序列</td></tr>
+            <tr><td>presence_penalty</td><td>number</td><td class="opt">否</td><td>-2 ~ 2</td></tr>
+            <tr><td>frequency_penalty</td><td>number</td><td class="opt">否</td><td>-2 ~ 2</td></tr>
+            <tr><td>seed</td><td>integer</td><td class="opt">否</td><td>尽力保证可复现</td></tr>
+            <tr><td>response_format</td><td>object</td><td class="opt">否</td><td><code>{"type":"json_object"}</code> 或 <code>json_schema</code></td></tr>
+            <tr><td>tools</td><td>array</td><td class="opt">否</td><td>函数工具定义</td></tr>
+            <tr><td>tool_choice</td><td>string / object</td><td class="opt">否</td><td><code>auto</code> / <code>none</code> / 指定函数</td></tr>
+            <tr><td>parallel_tool_calls</td><td>boolean</td><td class="opt">否</td><td>是否允许并行工具调用</td></tr>
+            <tr><td>logprobs / top_logprobs</td><td>boolean / integer</td><td class="opt">否</td><td>返回对数概率</td></tr>
+            <tr><td>reasoning_effort</td><td>string</td><td class="opt">否</td><td><code>low</code> / <code>medium</code> / <code>high</code></td></tr>
+            <tr><td>modalities</td><td>array</td><td class="opt">否</td><td>如 <code>["text","audio"]</code></td></tr>
+            <tr><td>user</td><td>string</td><td class="opt">否</td><td>终端用户标识，用于审计与风控</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="tabs">
+          <div class="tabbar"><button class="active" data-tab="r">响应</button><button data-tab="s">流式响应</button></div>
+          <div class="pane active" data-pane="r">
+            <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "chatcmpl-9x2f",
+  "object": "chat.completion",
+  "created": 1730000000,
+  "model": "gpt-4o-mini",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "你好！有什么可以帮你的？" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 12, "completion_tokens": 9, "total_tokens": 21 }
+}</code></pre></div>
+          </div>
+          <div class="pane" data-pane="s">
+            <div class="code has-lang" data-lang="text"><button class="copy">复制</button><pre><code>data: {"id":"chatcmpl-9x2f","object":"chat.completion.chunk","created":1730000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-9x2f","object":"chat.completion.chunk","created":1730000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"content":"你好"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-9x2f","object":"chat.completion.chunk","created":1730000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]</code></pre></div>
+          </div>
+        </div>
+
+        <div class="note"><b>计费：</b>按输入/输出 token 计费，具体倍率由模型定价与分组倍率决定。<code>n</code>、图像/音频输出会作为独立计费维度。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-completions">4.3 文本补全 Completions</h3>
+    <div class="ep" id="ep-completions-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/completions</code><span class="tag tok">sk- 令牌</span><span class="desc">旧版文本补全协议</span></div>
+      <div class="ep-body">
+        <p>请求字段：<code>model</code>（必填）、<code>prompt</code>（必填）、<code>max_tokens</code>、<code>temperature</code>、<code>top_p</code>、<code>n</code>、<code>stream</code>、<code>stop</code>、<code>echo</code> 等。响应为 <code>object: "text_completion"</code> 结构。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-messages">4.4 Claude Messages</h3>
+    <div class="ep" id="ep-messages-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/messages</code><span class="tag tok">x-api-key</span><span class="desc">Anthropic 原生协议</span></div>
+      <div class="ep-body">
+        <p>使用 <code>x-api-key: sk-xxx</code> 与 <code>anthropic-version: 2023-06-01</code>。若使用 <code>Authorization: Bearer</code> 也可（服务端会把 <code>x-api-key</code> 归一化为 Bearer）。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>Claude 模型名</td></tr>
+            <tr><td>max_tokens</td><td>integer</td><td class="req">是</td><td>最大输出 token</td></tr>
+            <tr><td>messages</td><td>array</td><td class="req">是</td><td><code>role</code> 为 <code>user</code> / <code>assistant</code></td></tr>
+            <tr><td>system</td><td>string / array</td><td class="opt">否</td><td>系统提示</td></tr>
+            <tr><td>temperature</td><td>number</td><td class="opt">否</td><td>0 ~ 1</td></tr>
+            <tr><td>top_p / top_k</td><td>number / integer</td><td class="opt">否</td><td>采样参数</td></tr>
+            <tr><td>stop_sequences</td><td>array</td><td class="opt">否</td><td>停止序列</td></tr>
+            <tr><td>stream</td><td>boolean</td><td class="opt">否</td><td>SSE 流式</td></tr>
+            <tr><td>tools / tool_choice</td><td>array / object</td><td class="opt">否</td><td>工具调用</td></tr>
+            <tr><td>thinking</td><td>object</td><td class="opt">否</td><td>扩展思考配置</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "msg_01XyZ",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-5-sonnet-20241022",
+  "content": [ { "type": "text", "text": "你好！" } ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": { "input_tokens": 10, "output_tokens": 8 }
+}</code></pre></div>
+        <p>流式事件：<code>message_start</code> → <code>content_block_start</code> → <code>content_block_delta</code> → <code>content_block_stop</code> → <code>message_delta</code> → <code>message_stop</code>。</p>
+        <div class="warn"><b>未开放：</b><code>POST /v1/messages/count_tokens</code> 当前未实现，请勿依赖。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-gemini">4.5 Gemini 原生协议</h3>
+    <div class="ep" id="ep-gemini-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1beta/models/{model}:generateContent</code><span class="tag tok">sk- 令牌</span><span class="desc">Gemini generateContent</span></div>
+      <div class="ep-body">
+        <p>也支持 <code>:streamGenerateContent?alt=sse</code>。密钥可放在 <code>x-goog-api-key</code> 头或 <code>?key=</code> 查询参数。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>contents</td><td>array</td><td class="req">是</td><td><code>[{"role":"user","parts":[{"text":"..."}]}]</code></td></tr>
+            <tr><td>systemInstruction</td><td>object</td><td class="opt">否</td><td>系统指令</td></tr>
+            <tr><td>generationConfig</td><td>object</td><td class="opt">否</td><td><code>temperature</code>、<code>topP</code>、<code>topK</code>、<code>maxOutputTokens</code>、<code>stopSequences</code>、<code>responseMimeType</code>、<code>responseSchema</code>、<code>thinkingConfig</code></td></tr>
+            <tr><td>tools</td><td>array</td><td class="opt">否</td><td>函数声明、Google Search 等</td></tr>
+            <tr><td>safetySettings</td><td>array</td><td class="opt">否</td><td>安全过滤阈值</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "candidates": [
+    {
+      "content": { "parts": [ { "text": "你好！" } ], "role": "model" },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 8,
+    "candidatesTokenCount": 5,
+    "totalTokenCount": 13
+  },
+  "modelVersion": "gemini-2.0-flash"
+}</code></pre></div>
+        <div class="warn"><b>未开放：</b><code>:countTokens</code> 未实现，调用会返回 404。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-responses">4.6 Responses API</h3>
+    <div class="ep" id="ep-responses-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/responses</code><span class="tag tok">sk- 令牌</span><span class="desc">有状态对话 / 智能体</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>模型名</td></tr>
+            <tr><td>input</td><td>string / array</td><td class="req">是</td><td>文本或多模态输入项</td></tr>
+            <tr><td>instructions</td><td>string</td><td class="opt">否</td><td>系统指令</td></tr>
+            <tr><td>stream</td><td>boolean</td><td class="opt">否</td><td>SSE 事件流</td></tr>
+            <tr><td>background</td><td>boolean</td><td class="opt">否</td><td>后台异步执行，随后用 GET 查询</td></tr>
+            <tr><td>previous_response_id</td><td>string</td><td class="opt">否</td><td>续接上轮上下文</td></tr>
+            <tr><td>max_output_tokens</td><td>integer</td><td class="opt">否</td><td>最大输出 token</td></tr>
+            <tr><td>tools / tool_choice</td><td>array / object</td><td class="opt">否</td><td>内置工具与函数</td></tr>
+            <tr><td>reasoning</td><td>object</td><td class="opt">否</td><td>推理强度配置</td></tr>
+            <tr><td>text</td><td>object</td><td class="opt">否</td><td>输出格式（如 JSON Schema）</td></tr>
+            <tr><td>store</td><td>boolean</td><td class="opt">否</td><td>是否允许上游存储</td></tr>
+            <tr><td>metadata</td><td>object</td><td class="opt">否</td><td>自定义元数据</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "resp_9f2c",
+  "object": "response",
+  "created_at": 1730000000,
+  "status": "completed",
+  "model": "gpt-4.1",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [ { "type": "output_text", "text": "你好！" } ]
+    }
+  ],
+  "usage": { "input_tokens": 12, "output_tokens": 6, "total_tokens": 18 }
+}</code></pre></div>
+        <p>流式事件以 <code>event: response.created</code>、<code>response.output_text.delta</code>、<code>response.completed</code> 等命名。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-responses-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/responses/{response_id}</code><span class="tag tok">sk- 令牌</span><span class="desc">查询后台响应</span></div>
+      <div class="ep-body"><p>用于 <code>background: true</code> 的异步响应，返回与创建时相同的响应对象。</p></div>
+    </div>
+
+    <div class="ep" id="ep-responses-compact">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/responses/compact</code><span class="tag tok">sk- 令牌</span><span class="desc">压缩会话上下文（Codex）</span></div>
+      <div class="ep-body">
+        <p>请求：<code>model</code>（必填）、<code>input</code>、<code>instructions</code>、<code>previous_response_id</code>、<code>tools</code>、<code>reasoning</code> 等。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "resp_compact_01",
+  "object": "response.compaction",
+  "created_at": 1730000000,
+  "output": [ { "type": "message", "role": "assistant", "content": [] } ],
+  "usage": { "input_tokens": 900, "output_tokens": 120, "total_tokens": 1020 }
+}</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ep-embeddings">4.7 向量化 Embeddings</h3>
+    <div class="ep" id="ep-embeddings-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/embeddings</code><span class="tag tok">sk- 令牌</span><span class="desc">文本向量</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>嵌入模型名</td></tr>
+            <tr><td>input</td><td>string / array</td><td class="req">是</td><td>单条文本、文本数组或 token 数组</td></tr>
+            <tr><td>encoding_format</td><td>string</td><td class="opt">否</td><td><code>float</code>（默认）/ <code>base64</code></td></tr>
+            <tr><td>dimensions</td><td>integer</td><td class="opt">否</td><td>指定输出维度（部分模型支持）</td></tr>
+            <tr><td>user</td><td>string</td><td class="opt">否</td><td>终端用户标识</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "object": "list",
+  "model": "text-embedding-3-small",
+  "data": [
+    { "object": "embedding", "index": 0, "embedding": [0.0023, -0.0091, 0.0142] }
+  ],
+  "usage": { "prompt_tokens": 7, "total_tokens": 7 }
+}</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ep-rerank">4.8 重排 Rerank</h3>
+    <div class="ep" id="ep-rerank-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/rerank</code><span class="tag tok">sk- 令牌</span><span class="desc">文档相关性重排</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>重排模型名</td></tr>
+            <tr><td>query</td><td>string</td><td class="req">是</td><td>查询文本</td></tr>
+            <tr><td>documents</td><td>array</td><td class="req">是</td><td>待排序文档，字符串或对象数组</td></tr>
+            <tr><td>top_n</td><td>integer</td><td class="opt">否</td><td>只返回前 N 条</td></tr>
+            <tr><td>return_documents</td><td>boolean</td><td class="opt">否</td><td>是否在结果中回传原文</td></tr>
+            <tr><td>max_chunk_per_doc</td><td>integer</td><td class="opt">否</td><td>长文档分块上限</td></tr>
+            <tr><td>overlap_tokens</td><td>integer</td><td class="opt">否</td><td>分块重叠 token</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "results": [
+    { "index": 3, "relevance_score": 0.9182 },
+    { "index": 1, "relevance_score": 0.7740 }
+  ],
+  "usage": { "prompt_tokens": 120, "total_tokens": 120 }
+}</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ep-audio">4.9 音频</h3>
+    <div class="ep" id="ep-audio-transcriptions">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/audio/transcriptions</code><span class="tag tok">sk- 令牌</span><span class="desc">语音转写</span></div>
+      <div class="ep-body">
+        <p><code>Content-Type: multipart/form-data</code>。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>file</td><td>file</td><td class="req">是</td><td>音频文件（mp3、mp4、mpeg、mpga、m4a、wav、webm）</td></tr>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>转写模型</td></tr>
+            <tr><td>language</td><td>string</td><td class="opt">否</td><td>ISO-639-1 语言代码</td></tr>
+            <tr><td>prompt</td><td>string</td><td class="opt">否</td><td>上下文提示</td></tr>
+            <tr><td>response_format</td><td>string</td><td class="opt">否</td><td><code>json</code>（默认）/ <code>text</code> / <code>srt</code> / <code>verbose_json</code> / <code>vtt</code></td></tr>
+            <tr><td>temperature</td><td>number</td><td class="opt">否</td><td>采样温度</td></tr>
+            <tr><td>timestamp_granularities[]</td><td>array</td><td class="opt">否</td><td><code>word</code> / <code>segment</code></td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "text": "这是一段语音。" }</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-audio-translations">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/audio/translations</code><span class="tag tok">sk- 令牌</span><span class="desc">语音翻译为英文</span></div>
+      <div class="ep-body"><p>字段与转写相同（<code>file</code>、<code>model</code>、<code>prompt</code>、<code>response_format</code>、<code>temperature</code>），输出英文文本。</p></div>
+    </div>
+
+    <div class="ep" id="ep-audio-speech">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/audio/speech</code><span class="tag tok">sk- 令牌</span><span class="desc">文字转语音</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>TTS 模型</td></tr>
+            <tr><td>input</td><td>string</td><td class="req">是</td><td>待合成文本（有长度上限）</td></tr>
+            <tr><td>voice</td><td>string</td><td class="req">是</td><td>音色名称</td></tr>
+            <tr><td>response_format</td><td>string</td><td class="opt">否</td><td><code>mp3</code>（默认）/ <code>opus</code> / <code>aac</code> / <code>flac</code> / <code>wav</code> / <code>pcm</code></td></tr>
+            <tr><td>speed</td><td>number</td><td class="opt">否</td><td>0.25 ~ 4.0</td></tr>
+          </tbody>
+        </table></div>
+        <p>成功时直接返回音频二进制流（<code>Content-Type: audio/mpeg</code> 等），不返回 JSON。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-images">4.10 图像</h3>
+    <div class="ep" id="ep-images-generations">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/images/generations</code><span class="tag tok">sk- 令牌</span><span class="desc">图片生成（同步）</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>图片模型名</td></tr>
+            <tr><td>prompt</td><td>string</td><td class="req">是</td><td>图片描述</td></tr>
+            <tr><td>n</td><td>integer</td><td class="opt">否</td><td>生成数量，1 ~ 128，影响计费</td></tr>
+            <tr><td>size</td><td>string</td><td class="opt">否</td><td>如 <code>1024x1024</code>、<code>1792x1024</code></td></tr>
+            <tr><td>quality</td><td>string</td><td class="opt">否</td><td><code>standard</code> / <code>hd</code> 或模型自定义值</td></tr>
+            <tr><td>style</td><td>string</td><td class="opt">否</td><td><code>vivid</code> / <code>natural</code></td></tr>
+            <tr><td>response_format</td><td>string</td><td class="opt">否</td><td><code>url</code> / <code>b64_json</code></td></tr>
+            <tr><td>background</td><td>string</td><td class="opt">否</td><td><code>transparent</code> 等</td></tr>
+            <tr><td>output_format</td><td>string</td><td class="opt">否</td><td><code>png</code> / <code>jpeg</code> / <code>webp</code></td></tr>
+            <tr><td>output_compression</td><td>integer</td><td class="opt">否</td><td>0 ~ 100</td></tr>
+            <tr><td>moderation</td><td>string</td><td class="opt">否</td><td>审核级别</td></tr>
+            <tr><td>stream</td><td>boolean</td><td class="opt">否</td><td>部分模型支持流式预览</td></tr>
+            <tr><td>user</td><td>string</td><td class="opt">否</td><td>终端用户标识</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "created": 1730000000,
+  "data": [
+    { "url": "https://cdn.example.com/img/abc.png", "revised_prompt": "a cat, studio lighting" }
+  ]
+}</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-images-edits">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/images/edits</code><span class="tag tok">sk- 令牌</span><span class="desc">图片编辑 / 图生图</span></div>
+      <div class="ep-body">
+        <p>支持 JSON（传图片 URL）与 <code>multipart/form-data</code>（传文件）。字段：<code>model</code>、<code>prompt</code>、<code>image</code>（必填）、<code>mask</code>、<code>n</code>、<code>size</code>、<code>quality</code>、<code>response_format</code>、<code>input_fidelity</code>。响应结构与生成一致。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-edits">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/edits</code><span class="tag tok">sk- 令牌</span><span class="desc">旧版 edits 路径</span></div>
+      <div class="ep-body"><p>保留的兼容入口，按 OpenAI 图片协议转发；新接入请使用 <code>/v1/images/edits</code>。</p></div>
+    </div>
+
+    <h3 id="ep-moderations">4.11 内容审核 Moderation</h3>
+    <div class="ep" id="ep-moderations-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/moderations</code><span class="tag tok">sk- 令牌</span><span class="desc">内容安全审核</span></div>
+      <div class="ep-body">
+        <p>请求：<code>model</code>（必填）、<code>input</code>（必填，字符串或数组）。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "modr-9x2f",
+  "model": "omni-moderation-latest",
+  "results": [
+    {
+      "flagged": false,
+      "categories": { "hate": false, "violence": false },
+      "category_scores": { "hate": 0.0001, "violence": 0.0002 }
+    }
+  ]
+}</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="relay-misc">4.12 工具型与高级端点</h3>
+    <div class="ep" id="ep-alpha-search">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/alpha/search</code><span class="tag tok">sk- 令牌</span><span class="desc">独立联网搜索（Codex）</span></div>
+      <div class="ep-body">
+        <p>请求体必须包含 <code>model</code>；其余字段原样转发上游搜索服务。可选 <code>stream</code>、<code>id</code>。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-tools-search">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/tools/search</code><span class="tag tok">sk- 令牌</span><span class="desc">DeepSeek Search API</span></div>
+      <div class="ep-body">
+        <p>请求体原样转发（含 <code>query</code> 等上游字段），可携带 <code>model</code> 指定路由模型；响应由上游决定，计量为固定单次价格。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-tools-fetch">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/tools/fetch</code><span class="tag tok">sk- 令牌</span><span class="desc">DeepSeek Fetch API</span></div>
+      <div class="ep-body"><p>请求体原样转发（含 <code>url</code> 等字段），其余同上。</p></div>
+    </div>
+
+    <div class="ep" id="ep-unimplemented">
+      <div class="ep-head"><span class="m get">MULTI</span><code class="path">未实现的 OpenAI 端点</code><span class="tag ws">返回 501</span><span class="desc">不要在对接中使用</span></div>
+      <div class="ep-body">
+        <p><code>POST /v1/images/variations</code>、<code>GET|POST /v1/files</code>、<code>GET|DELETE /v1/files/{id}</code>、<code>GET /v1/files/{id}/content</code>、<code>POST|GET /v1/fine-tunes</code>、<code>GET /v1/fine-tunes/{id}</code>、<code>POST /v1/fine-tunes/{id}/cancel</code>、<code>GET /v1/fine-tunes/{id}/events</code>、<code>DELETE /v1/models/{model}</code>。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-realtime">4.13 实时语音 WebSocket</h3>
+    <div class="ep" id="ep-realtime-ws">
+      <div class="ep-head"><span class="m get">WS</span><code class="path">/v1/realtime</code><span class="tag ws">WebSocket</span><span class="desc">Realtime 语音对话</span></div>
+      <div class="ep-body">
+        <p>连接示例：</p>
+        <div class="code has-lang" data-lang="text"><button class="copy">复制</button><pre><code>wss://api.example.com/v1/realtime?model=gpt-4o-realtime-preview</code></pre></div>
+        <p>建立连接时通过子协议传入令牌，之后为上游 Realtime 事件协议（<code>session.update</code>、<code>input_audio_buffer.append</code>、<code>response.create</code> 等）的原样透传。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-mj">4.14 Midjourney</h3>
+    <p>采用 Midjourney Proxy 约定，成功响应 <code>{"code":1,"description":"...","result":"&lt;taskId&gt;"}</code>，失败响应 <code>{"code":非1,"description":"...","type":"upstream_error"}</code>。</p>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/imagine</code></td><td>文生图，必填 <code>prompt</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/action</code></td><td>对已有任务执行 U/V 操作，必填 <code>taskId</code>、<code>customId</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/change</code></td><td>局部重绘，必填 <code>taskId</code>、<code>action</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/simple-change</code></td><td>简化版局部重绘</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/blend</code></td><td>图片混合，必填 <code>base64Array</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/describe</code></td><td>图生文，必填 <code>base64</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/modal</code></td><td>弹窗提交，必填 <code>taskId</code>、<code>prompt</code></td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/shorten</code></td><td>提示词优化</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/video</code></td><td>视频生成</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/submit/upload-discord-images</code></td><td>上传参考图，返回 URL 列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/insight-face/swap</code></td><td>换脸，必填 <code>sourceBase64</code>、<code>targetBase64</code></td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/mj/task/{id}/fetch</code></td><td>查询任务结果</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/mj/task/{id}/image-seed</code></td><td>查询图片种子</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/mj/task/list-by-condition</code></td><td>条件查询任务列表</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/mj/image/{id}</code></td><td>图片代理，无需令牌</td></tr>
+      </tbody>
+    </table></div>
+    <p>另提供带模式前缀的等价路由：<code>/{mode}/mj/...</code>（例如 <code>/mj-fast/mj/submit/imagine</code>），由管理员配置的模式决定实际渠道。</p>
+
+    <h2 id="tasks">5. 任务与异步媒体</h2>
+    <p>视频、音乐、长耗时图片等由「任务」承载：提交后立即返回任务 ID，客户端轮询或用产物接口下载结果。所有任务接口使用 <code>sk-</code> 令牌，且只能访问该令牌所属用户的任务。</p>
+
+    <h3 id="ep-videos">5.1 视频接口（OpenAI Videos）</h3>
+    <div class="ep" id="ep-videos-create">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/videos</code><span class="tag tok">sk- 令牌</span><span class="desc">创建视频任务</span></div>
+      <div class="ep-body">
+        <p>支持 JSON 与 <code>multipart/form-data</code>（上传参考图）。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>model</td><td>string</td><td class="req">是</td><td>视频模型名</td></tr>
+            <tr><td>prompt</td><td>string</td><td class="req">是</td><td>视频描述</td></tr>
+            <tr><td>seconds</td><td>string</td><td class="opt">否</td><td>时长（秒），影响计费</td></tr>
+            <tr><td>size</td><td>string</td><td class="opt">否</td><td>如 <code>1280x720</code></td></tr>
+            <tr><td>input_reference</td><td>file / string</td><td class="opt">否</td><td>首帧参考图</td></tr>
+            <tr><td>remix_video_id</td><td>string</td><td class="opt">否</td><td>基于已有视频再创作</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "video_9f2c",
+  "object": "video",
+  "model": "sora-2",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1730000000,
+  "seconds": "8",
+  "size": "1280x720"
+}</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-videos-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/videos/{task_id}</code><span class="tag tok">sk- 令牌</span><span class="desc">查询视频任务</span></div>
+      <div class="ep-body">
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "id": "video_9f2c",
+  "object": "video",
+  "model": "sora-2",
+  "status": "completed",
+  "progress": 100,
+  "created_at": 1730000000,
+  "completed_at": 1730000240,
+  "expires_at": 1730086640,
+  "seconds": "8",
+  "size": "1280x720",
+  "metadata": { "duration": 8, "fps": 24, "width": 1280, "height": 720 }
+}</code></pre></div>
+        <p><code>status</code> 取值：<code>queued</code>、<code>in_progress</code>、<code>completed</code>、<code>failed</code>。失败时包含 <code>error: {message, code}</code>。不同插件可能返回额外厂商扩展字段。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-videos-content">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/videos/{task_id}/content</code><span class="tag tok">sk- 令牌</span><span class="desc">下载视频二进制</span></div>
+      <div class="ep-body"><p>返回视频二进制流（<code>Content-Type: video/mp4</code>），支持 <code>HEAD</code> 探测；上游支持时透传 <code>Range</code> 请求头。</p></div>
+    </div>
+
+    <div class="ep" id="ep-video-compat">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/video/generations</code><span class="tag tok">sk- 令牌</span><span class="desc">兼容式视频生成</span></div>
+      <div class="ep-body">
+        <p>请求字段：<code>model</code>、<code>prompt</code>、<code>image</code>、<code>duration</code>、<code>width</code>、<code>height</code>、<code>fps</code>、<code>seed</code>、<code>n</code>、<code>metadata</code>。响应：</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "task_id": "abcd1234efgh", "status": "submitted" }</code></pre></div>
+        <p>查询：<code>GET /v1/video/generations/{task_id}</code>，返回：</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "task_id": "abcd1234efgh",
+  "status": "succeeded",
+  "url": "https://cdn.example.com/v/abcd.mp4",
+  "format": "mp4",
+  "metadata": { "duration": 5, "fps": 30, "width": 512, "height": 512, "seed": 20231234 }
+}</code></pre></div>
+        <p>再创作：<code>POST /v1/videos/{video_id}/remix</code>。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-tasks">5.2 通用任务接口</h3>
+    <p><code>{key}</code> 为任务插件的 key（如 <code>kling</code>、<code>suno</code>、<code>jimeng</code>、<code>sora</code>），由管理员安装的插件决定。</p>
+
+    <div class="ep" id="ep-tasks-submit">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/v1/tasks/{key}</code><span class="tag tok">sk- 令牌</span><span class="desc">提交任务</span></div>
+      <div class="ep-body">
+        <p>请求体为插件定义的厂商格式（JSON 或 <code>multipart/form-data</code>）；若插件声明了 <code>models</code> 限制，请求体顶层 <code>model</code> 必须在白名单内。</p>
+        <p>成功时返回插件渲染的厂商响应，其中任务 ID 已被替换为网关公开 ID。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-tasks-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/tasks/{key}</code><span class="tag tok">sk- 令牌</span><span class="desc">查询任务状态</span></div>
+      <div class="ep-body">
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "task_id": "abcd1234efgh",
+  "platform": "kling",
+  "status": "SUCCESS",
+  "progress": "100%",
+  "fail_reason": "",
+  "created_at": 1730000000,
+  "finished_at": 1730000180
+}</code></pre></div>
+        <p><code>status</code> 取值：<code>SUBMITTED</code>、<code>QUEUED</code>、<code>IN_PROGRESS</code>、<code>SUCCESS</code>、<code>FAILURE</code>、<code>UNKNOWN</code>。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-tasks-artifacts">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/v1/tasks/{key}/artifacts</code><span class="tag tok">sk- 令牌</span><span class="desc">列出任务产物</span></div>
+      <div class="ep-body">
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "task_id": "abcd1234efgh",
+  "artifacts": [
+    {
+      "key": "video",
+      "type": "video",
+      "mime_type": "video/mp4",
+      "content_url": "/v1/tasks/abcd1234efgh/artifacts/video/content?artifact_key=ak_9c1f"
+    }
+  ]
+}</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-tasks-content">
+      <div class="ep-head"><span class="m get">GET/HEAD</span><code class="path">/v1/tasks/{key}/artifacts/{artifact_key}/content</code><span class="tag tok">令牌或 artifact_key</span><span class="desc">下载产物内容</span></div>
+      <div class="ep-body">
+        <p>可直接携带 <code>Authorization</code>，也可使用列表返回的 <code>artifact_key</code> 查询参数（便于把 URL 交给前端或第三方下载）。</p>
+      </div>
+    </div>
+
+    <h3 id="plugin-routes">5.3 插件原生路由</h3>
+    <p>安装插件后，其原生厂商路径会直接注册到网关，鉴权同样是 <code>Authorization: Bearer sk-xxx</code>。常见前缀如下（以实际安装版本为准）：</p>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>插件 key</th><th>原生路由前缀</th><th>典型端点</th></tr></thead>
+      <tbody>
+        <tr><td>kling</td><td><code>/kling/v1/videos</code></td><td><code>POST /kling/v1/videos/text2video</code>、<code>GET /kling/v1/videos/text2video/{task_id}</code></td></tr>
+        <tr><td>jimeng</td><td><code>/jimeng/</code></td><td><code>POST /jimeng/</code>（动态任务）</td></tr>
+        <tr><td>vidu</td><td><code>/vidu/ent/v2</code></td><td><code>POST /vidu/ent/v2/text2video</code>、<code>GET /vidu/ent/v2/tasks/{task_id}/creations</code></td></tr>
+        <tr><td>hailuo</td><td><code>/hailuo/v1</code>、<code>/hailuo/v2</code></td><td><code>POST /hailuo/v1/video_generation</code>、<code>GET /hailuo/v1/query/video_generation/{task_id}</code></td></tr>
+        <tr><td>doubao</td><td><code>/doubao/api/v3</code></td><td><code>POST /doubao/api/v3/contents/generations/tasks</code>、<code>POST /doubao/api/v3/images/generations</code></td></tr>
+        <tr><td>alibaba</td><td><code>/ali/api/v1</code></td><td><code>POST /ali/api/v1/services/aigc/video-generation/video-synthesis</code>、<code>GET /ali/api/v1/tasks/{task_id}</code></td></tr>
+        <tr><td>google</td><td><code>/google/v1beta/models</code></td><td><code>POST /google/v1beta/models/{model}</code>、<code>GET /google/v1beta/models/{model}/operations/{task_id}</code></td></tr>
+        <tr><td>vertex-ai</td><td><code>/vertex-ai/v1/projects</code></td><td><code>POST /vertex-ai/v1/projects/{project}/locations/{location}/publishers/google/models/{model}</code></td></tr>
+        <tr><td>sunoapi</td><td><code>/suno</code></td><td><code>POST /suno/submit/{action}</code>、<code>GET /suno/fetch/{task_id}</code>、<code>POST /suno/fetch</code></td></tr>
+        <tr><td>xai</td><td><code>/xai/v1/videos</code></td><td><code>POST /xai/v1/videos/generations</code>、<code>GET /xai/v1/videos/{request_id}</code></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note">原生路由的请求/响应完全遵循对应厂商协议，具体字段请参考厂商文档；网关只负责鉴权、任务持久化、计费与轮询。</div>
+
+    <h2 id="usage">6. 用量与账单</h2>
+    <p>以下接口只需要站点令牌，适合客户端自查余额与消费，无需控制台登录。</p>
+
+    <div class="ep" id="ep-usage-token">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/usage/token/</code><span class="tag tok">sk- 令牌</span><span class="desc">查询令牌额度与用量</span></div>
+      <div class="ep-body">
+        <p>即使令牌已过期或额度耗尽也可查询；仅禁用令牌会被拒绝（401）。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "code": true,
+  "message": "ok",
+  "data": {
+    "object": "token_usage",
+    "name": "生产环境",
+    "total_granted": 5000000,
+    "total_used": 120000,
+    "total_available": 4880000,
+    "unlimited_quota": false,
+    "model_limits": { "gpt-4o-mini": true },
+    "model_limits_enabled": true,
+    "expires_at": 0,
+    "user_quota": { "total_available": 4880000, "total_used": 120000 }
+  }
+}</code></pre></div>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>total_granted</td><td>令牌授予总额度 = 已用 + 剩余</td></tr>
+            <tr><td>total_used</td><td>已使用额度</td></tr>
+            <tr><td>total_available</td><td>剩余额度</td></tr>
+            <tr><td>unlimited_quota</td><td>是否无限额度</td></tr>
+            <tr><td>expires_at</td><td>过期时间戳；<code>0</code> 表示永不过期</td></tr>
+            <tr><td>user_quota</td><td>仅当令牌开启「允许查询用户额度」时返回</td></tr>
+          </tbody>
+        </table></div>
+        <p>额度单位为内部 quota，换算关系：<code>金额 = quota / QuotaPerUnit</code>，<code>QuotaPerUnit</code> 可从 <code>GET /api/status</code> 获取。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-log-token">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/log/token</code><span class="tag tok">sk- 令牌</span><span class="desc">查询该令牌的调用日志</span></div>
+      <div class="ep-body">
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": [
+    {
+      "id": 1024,
+      "user_id": 1,
+      "created_at": 1730000000,
+      "type": 2,
+      "content": "",
+      "username": "demo",
+      "token_name": "生产环境",
+      "model_name": "gpt-4o-mini",
+      "quota": 21,
+      "prompt_tokens": 12,
+      "completion_tokens": 9,
+      "use_time": 2,
+      "is_stream": false,
+      "channel": 3,
+      "group": "default",
+      "request_id": "20251030120000abc",
+      "other": "{}"
+    }
+  ]
+}</code></pre></div>
+        <p><code>type</code>：<code>1</code> 充值、<code>2</code> 消费、<code>3</code> 管理、<code>4</code> 系统、<code>5</code> 错误、<code>6</code> 退款、<code>7</code> 登录。</p>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-billing-subscription">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/dashboard/billing/subscription</code><span class="tag tok">sk- 令牌</span><span class="desc">OpenAI 账单订阅信息</span></div>
+      <div class="ep-body">
+        <p>等价路径：<code>/v1/dashboard/billing/subscription</code>。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "object": "billing_subscription",
+  "has_payment_method": true,
+  "soft_limit_usd": 4.88,
+  "hard_limit_usd": 4.88,
+  "system_hard_limit_usd": 4.88,
+  "access_until": 0
+}</code></pre></div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-billing-usage">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/dashboard/billing/usage</code><span class="tag tok">sk- 令牌</span><span class="desc">OpenAI 账单用量</span></div>
+      <div class="ep-body">
+        <p>等价路径：<code>/v1/dashboard/billing/usage</code>。返回 <code>{"object":"list","total_usage": 1200.0}</code>，<code>total_usage</code> 单位为「美分」。</p>
+      </div>
+    </div>
+
+    <h2 id="management">7. 管理 API</h2>
+    <p>管理 API 用于账号、令牌、渠道、用户与系统配置管理，全部挂在 <code>/api</code> 下，统一使用 <a href="#conventions">标准响应包络</a>。</p>
+
+    <h3 id="mgmt-auth">7.1 权限模型</h3>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>角色</th><th>role 值</th><th>典型能力</th></tr></thead>
+      <tbody>
+        <tr><td>普通用户</td><td><code>1</code></td><td>个人资料、令牌、用量、钱包、安全设置</td></tr>
+        <tr><td>管理员</td><td><code>10</code></td><td>用户、渠道、日志、模型、兑换码管理（受 Casbin 权限约束）</td></tr>
+        <tr><td>超级管理员（Root）</td><td><code>100</code></td><td>系统设置、插件、运维、密钥查看</td></tr>
+      </tbody>
+    </table></div>
+    <p>管理员接口在角色之外还受 Casbin 权限矩阵约束（如 <code>channel:read</code>、<code>user:write</code>），可通过 <code>GET /api/authz/catalog</code> 获取完整权限目录。PAT 调用时同样要求对应 scope。</p>
+
+    <h3 id="mgmt-routes">7.2 完整路由表</h3>
+    <div class="note">「权限」列含义：<span class="tag pub">公开</span> 无需鉴权；<span class="tag jwt">用户</span> 登录用户；<span class="tag adm">管理员</span> 管理员角色；<span class="tag adm">Root</span> 超级管理员。</div>
+
+    <h4>账号与会话</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/register</code></td><td><span class="tag pub">公开</span></td><td>注册（可能要求 Turnstile / 邮箱验证）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/login/encryption-key</code></td><td><span class="tag pub">公开</span></td><td>获取密码加密公钥</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/login</code></td><td><span class="tag pub">公开</span></td><td>登录</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/login/2fa</code></td><td><span class="tag pub">公开</span></td><td>2FA 登录验证</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/login/verify</code></td><td><span class="tag pub">公开</span></td><td>通用登录验证（邮箱 / OAuth 等）</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/login/passkey/begin</code></td><td><span class="tag pub">公开</span></td><td>Passkey 登录开始</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/login/passkey/finish</code></td><td><span class="tag pub">公开</span></td><td>Passkey 登录完成</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/auth/refresh</code></td><td><span class="tag jwt">Cookie</span></td><td>刷新 Access Token</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/auth/logout</code></td><td><span class="tag jwt">Cookie</span></td><td>登出</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/sessions</code></td><td><span class="tag jwt">用户</span></td><td>登录设备列表（仅浏览器会话）</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/sessions/{sid}</code></td><td><span class="tag jwt">用户</span></td><td>撤销指定会话</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/sessions/revoke-others</code></td><td><span class="tag jwt">用户</span></td><td>撤销其他会话</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/self</code></td><td><span class="tag jwt">用户</span></td><td>当前用户信息</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/user/self</code></td><td><span class="tag jwt">用户</span></td><td>修改个人资料</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/self</code></td><td><span class="tag jwt">用户</span></td><td>注销账号</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/self/groups</code></td><td><span class="tag jwt">用户</span></td><td>我的可用分组</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/models</code></td><td><span class="tag jwt">用户</span></td><td>我的可用模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/groups</code></td><td><span class="tag pub">公开</span></td><td>站点分组列表</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models</code></td><td><span class="tag jwt">用户</span></td><td>控制台模型清单（按渠道分组）</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/user/setting</code></td><td><span class="tag jwt">用户</span></td><td>个人偏好设置</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/2fa/status</code></td><td><span class="tag jwt">用户</span></td><td>2FA 状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/2fa/setup</code></td><td><span class="tag jwt">用户</span></td><td>初始化 2FA（需 Proof）</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/2fa/enable</code></td><td><span class="tag jwt">用户</span></td><td>启用 2FA（需 Proof）</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/2fa/disable</code></td><td><span class="tag jwt">用户</span></td><td>关闭 2FA</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/2fa/backup_codes</code></td><td><span class="tag jwt">用户</span></td><td>重新生成备用码</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/passkey</code></td><td><span class="tag jwt">用户</span></td><td>Passkey 状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/passkey/register/begin</code></td><td><span class="tag jwt">用户</span></td><td>注册 Passkey 开始</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/passkey/register/finish</code></td><td><span class="tag jwt">用户</span></td><td>注册 Passkey 完成</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/passkey</code></td><td><span class="tag jwt">用户</span></td><td>删除 Passkey</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/oauth/bindings</code></td><td><span class="tag jwt">用户</span></td><td>第三方账号绑定列表</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/oauth/bindings/{provider_id}</code></td><td><span class="tag jwt">用户</span></td><td>解绑第三方账号</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/aff</code></td><td><span class="tag jwt">用户</span></td><td>邀请码</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/checkin</code></td><td><span class="tag jwt">用户</span></td><td>签到状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/checkin</code></td><td><span class="tag jwt">用户</span></td><td>执行签到</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>令牌（站点令牌）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/token/</code></td><td><span class="tag jwt">用户</span></td><td>令牌列表（key 已脱敏）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/token/search</code></td><td><span class="tag jwt">用户</span></td><td>按名称 / key 搜索</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/token/auto-groups</code></td><td><span class="tag jwt">用户</span></td><td>可选的自动分组</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/token/{id}</code></td><td><span class="tag jwt">用户</span></td><td>令牌详情</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/token/{id}/key</code></td><td><span class="tag jwt">用户</span></td><td>获取令牌明文 key</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/token/</code></td><td><span class="tag jwt">用户</span></td><td>新建令牌</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/token/</code></td><td><span class="tag jwt">用户</span></td><td>更新令牌</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/token/{id}</code></td><td><span class="tag jwt">用户</span></td><td>删除令牌</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/token/batch</code></td><td><span class="tag jwt">用户</span></td><td>批量删除</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/token/batch/keys</code></td><td><span class="tag jwt">用户</span></td><td>批量获取明文 key</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/usage/token/</code></td><td><span class="tag tok">sk- 令牌</span></td><td>令牌额度（见 <a href="#usage">第 6 节</a>）</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>PAT（个人访问令牌）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/access_tokens</code></td><td>列表（仅浏览器会话）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/access_tokens/catalog</code></td><td>可授予的 scope 目录</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/access_tokens/scopes</code></td><td>scope 标签字典</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/access_tokens</code></td><td>创建（需 Proof，明文只返回一次）</td></tr>
+        <tr><td><span class="m patch">PATCH</span></td><td><code>/api/user/access_tokens/{id}</code></td><td>改名 / 调整 scope</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/access_tokens/{id}</code></td><td>撤销</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/access_tokens/legacy</code></td><td>撤销旧版令牌</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>用户管理（管理员）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/</code></td><td>用户列表，支持 <code>p</code>、<code>page_size</code>、<code>sort_by</code>、<code>sort_order</code></td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/search</code></td><td>关键词 / 分组 / 角色 / 状态搜索</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/{id}</code></td><td>用户详情</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/</code></td><td>创建用户</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/user/</code></td><td>更新用户</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/manage</code></td><td>管理动作：禁用/启用/提升/降级/调额/删除（<a href="#ep-user-manage">详解</a>）</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/{id}</code></td><td>删除用户（需 Proof）</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/{id}/reset_passkey</code></td><td>重置用户 Passkey</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/{id}/2fa</code></td><td>关闭用户 2FA</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/2fa/stats</code></td><td>2FA 使用统计</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/topup</code></td><td>全部充值记录</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/topup/complete</code></td><td>手动完成充值</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/{id}/oauth/bindings</code></td><td>查看用户绑定</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/{id}/oauth/bindings/{provider_id}</code></td><td>解除用户绑定</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/user/{id}/bindings/{binding_type}</code></td><td>清除指定类型绑定</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>渠道（管理员）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/</code></td><td>channel:read</td><td>渠道列表</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/search</code></td><td>channel:read</td><td>渠道搜索</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/models</code></td><td>channel:read</td><td>渠道模型清单</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/models_enabled</code></td><td>channel:read</td><td>已启用模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/{id}</code></td><td>channel:read</td><td>渠道详情</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/{id}/key</code></td><td>Root + Proof</td><td>查看渠道密钥（需 <code>channel.key.read</code>）</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/</code></td><td>channel:sensitive_write</td><td>新增渠道</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/channel/</code></td><td>channel:write</td><td>更新渠道</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/channel/{id}</code></td><td>channel:sensitive_write</td><td>删除渠道</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/batch</code></td><td>channel:sensitive_write</td><td>批量删除</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/test/{id}</code></td><td>channel:operate</td><td>测试单个渠道</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/test</code></td><td>channel:operate</td><td>测试全部渠道</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/update_balance</code></td><td>channel:operate</td><td>刷新全部余额</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/update_balance/{id}</code></td><td>channel:operate</td><td>刷新单个余额</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/{id}/status</code></td><td>channel:operate</td><td>启用 / 禁用渠道</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/status/batch</code></td><td>channel:operate</td><td>批量改状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/fix</code></td><td>channel:operate</td><td>修复渠道能力表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/fetch_models</code></td><td>channel:sensitive_write</td><td>拉取上游模型（无 id）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/fetch_models/{id}</code></td><td>channel:operate</td><td>拉取指定渠道模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/priority/order</code></td><td>channel:read</td><td>优先级排序</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/priority/reorder</code></td><td>channel:write</td><td>保存优先级</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/default_base_urls</code></td><td>channel:read</td><td>默认 Base URL 列表</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/ops</code></td><td>channel:read</td><td>渠道运维信息</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/copy/{id}</code></td><td>channel:sensitive_write</td><td>复制渠道</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/multi_key/manage</code></td><td>channel:operate</td><td>多密钥管理</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/ollama/pull</code></td><td>channel:sensitive_write</td><td>拉取 Ollama 模型</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/ollama/pull/stream</code></td><td>channel:sensitive_write</td><td>流式拉取</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/channel/ollama/delete</code></td><td>channel:sensitive_write</td><td>删除 Ollama 模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/ollama/version/{id}</code></td><td>channel:sensitive_write</td><td>Ollama 版本</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/tag/models</code></td><td>channel:read</td><td>标签模型</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/batch/tag</code></td><td>channel:write</td><td>批量设置标签</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/channel/tag</code></td><td>channel:write</td><td>编辑标签</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/tag/disabled</code></td><td>channel:operate</td><td>禁用标签下渠道</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/tag/enabled</code></td><td>channel:operate</td><td>启用标签下渠道</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/channel/disabled</code></td><td>channel:sensitive_write</td><td>清空禁用渠道</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/{id}/vllm/status</code></td><td>channel:read</td><td>vLLM 状态</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/{id}/sglang/status</code></td><td>channel:read</td><td>SGLang 状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/{id}/codex/refresh</code></td><td>channel:sensitive_write</td><td>刷新 Codex 凭证</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/{id}/codex/usage</code></td><td>channel:read</td><td>Codex 用量</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/channel/{id}/codex/usage/reset-credits</code></td><td>channel:read</td><td>Codex 重置额度</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/{id}/codex/usage/reset</code></td><td>channel:operate</td><td>重置 Codex 用量</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/upstream_updates/apply</code></td><td>channel:write</td><td>应用上游模型更新</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/upstream_updates/apply_all</code></td><td>channel:write</td><td>应用全部更新</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/upstream_updates/detect</code></td><td>channel:operate</td><td>检测上游更新</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/channel/upstream_updates/detect_all</code></td><td>channel:operate</td><td>检测全部</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>日志与统计</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/</code></td><td><span class="tag adm">管理员</span></td><td>全部日志，支持时间范围 / 模型 / 令牌 / 用户 / 渠道过滤</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/self</code></td><td><span class="tag jwt">用户</span></td><td>我的日志</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/stat</code></td><td><span class="tag adm">管理员</span></td><td>全站统计（<a href="#ep-log-stat">详解</a>）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/self/stat</code></td><td><span class="tag jwt">用户</span></td><td>我的统计（<a href="#ep-log-stat">详解</a>）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/search</code></td><td><span class="tag adm">管理员</span></td><td>日志搜索</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/self/search</code></td><td><span class="tag jwt">用户</span></td><td>我的日志搜索</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/export</code></td><td><span class="tag adm">管理员</span></td><td>导出全部日志</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/self/export</code></td><td><span class="tag jwt">用户</span></td><td>导出我的日志</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/channel_affinity_usage_cache</code></td><td><span class="tag adm">管理员</span></td><td>渠道亲和缓存统计</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/log/token</code></td><td><span class="tag tok">sk- 令牌</span></td><td>令牌维度日志（见 <a href="#usage">第 6 节</a>）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/data/</code></td><td><span class="tag adm">管理员</span></td><td>全站配额趋势</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/data/users</code></td><td><span class="tag adm">管理员</span></td><td>按用户统计</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/data/self</code></td><td><span class="tag jwt">用户</span></td><td>我的配额趋势（<a href="#ep-data-self">详解</a>）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/data/flow</code></td><td><span class="tag adm">管理员</span></td><td>全站消费流水</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/data/flow/self</code></td><td><span class="tag jwt">用户</span></td><td>我的消费流水</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/audit</code></td><td><span class="tag adm">管理员</span></td><td>审计日志（<code>audit:read</code>）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/audit/self</code></td><td><span class="tag jwt">用户</span></td><td>我的审计记录</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>钱包 / 订阅 / 兑换</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/topup/info</code></td><td><span class="tag jwt">用户</span></td><td>充值配置</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/topup/self</code></td><td><span class="tag jwt">用户</span></td><td>我的充值记录</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/topup</code></td><td><span class="tag jwt">用户</span></td><td>兑换码充值</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/pay</code></td><td><span class="tag jwt">用户</span></td><td>易支付下单</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/amount</code></td><td><span class="tag jwt">用户</span></td><td>计算支付金额</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/stripe/pay</code></td><td><span class="tag jwt">用户</span></td><td>Stripe 下单</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/stripe/amount</code></td><td><span class="tag jwt">用户</span></td><td>Stripe 金额</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/creem/pay</code></td><td><span class="tag jwt">用户</span></td><td>Creem 下单</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/waffo/pay</code></td><td><span class="tag jwt">用户</span></td><td>Waffo 下单</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/waffo-pancake/pay</code></td><td><span class="tag jwt">用户</span></td><td>Waffo Pancake 下单</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/aff_transfer</code></td><td><span class="tag jwt">用户</span></td><td>邀请返利转入余额</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/plans</code></td><td><span class="tag jwt">用户</span></td><td>订阅套餐</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/self</code></td><td><span class="tag jwt">用户</span></td><td>我的订阅</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/subscription/self/preference</code></td><td><span class="tag jwt">用户</span></td><td>订阅偏好</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/balance/pay</code></td><td><span class="tag jwt">用户</span></td><td>余额购买订阅</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/redemption/</code></td><td><span class="tag adm">管理员</span></td><td>兑换码列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/redemption/</code></td><td><span class="tag adm">管理员</span></td><td>生成兑换码</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/redemption/</code></td><td><span class="tag adm">管理员</span></td><td>更新兑换码</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/redemption/{id}</code></td><td><span class="tag adm">管理员</span></td><td>删除兑换码</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>模型 / 供应商 / 部署</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/</code></td><td><span class="tag adm">管理员</span></td><td>模型元数据列表</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/search</code></td><td><span class="tag adm">管理员</span></td><td>搜索模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/{id}</code></td><td><span class="tag adm">管理员</span></td><td>模型详情</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/models/</code></td><td><span class="tag adm">管理员</span></td><td>新增模型</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/models/</code></td><td><span class="tag adm">管理员</span></td><td>更新模型</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/models/{id}</code></td><td><span class="tag adm">管理员</span></td><td>删除模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/missing</code></td><td><span class="tag adm">管理员</span></td><td>缺失模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/sync_upstream/preview</code></td><td><span class="tag adm">管理员</span></td><td>上游模型同步预览</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/models/sync_upstream</code></td><td><span class="tag adm">管理员</span></td><td>执行同步</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/vendors/</code></td><td><span class="tag adm">管理员</span></td><td>供应商列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/vendors/</code></td><td><span class="tag adm">管理员</span></td><td>新增供应商</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/vendors/operations/preview</code></td><td><span class="tag adm">管理员</span></td><td>批量操作预览</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/vendors/operations</code></td><td><span class="tag adm">管理员</span></td><td>执行批量操作</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/deployments/</code></td><td><span class="tag adm">管理员</span></td><td>部署列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/deployments/</code></td><td><span class="tag adm">管理员</span></td><td>创建部署</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/deployments/{id}</code></td><td><span class="tag adm">管理员</span></td><td>部署详情</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/deployments/{id}</code></td><td><span class="tag adm">管理员</span></td><td>更新部署</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/deployments/{id}</code></td><td><span class="tag adm">管理员</span></td><td>删除部署</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>系统与运维（Root）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/option/</code></td><td>读取全部系统设置</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/option/</code></td><td>修改系统设置</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/option/request_policy</code></td><td>请求策略</td></tr>
+        <tr><td><span class="m patch">PATCH</span></td><td><code>/api/option/request_policy</code></td><td>更新请求策略</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/option/model_pricing</code></td><td>模型定价配置</td></tr>
+        <tr><td><span class="m patch">PATCH</span></td><td><code>/api/option/model_pricing</code></td><td>更新模型定价</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/option/model_pricing/preview</code></td><td>定价预览</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/option/model_pricing/convert</code></td><td>定价格式转换</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/option/rest_model_ratio</code></td><td>重置模型倍率</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/performance/stats</code></td><td>性能统计</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/performance/gc</code></td><td>强制 GC</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/performance/logs</code></td><td>日志文件列表</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/performance/logs</code></td><td>清理日志文件</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task</code></td><td>任务插件列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/plugin/task</code></td><td>上传任务插件</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task/{key}</code></td><td>插件详情</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/plugin/task/{key}/activate</code></td><td>激活版本</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/plugin/task/{key}/status</code></td><td>启用 / 停用</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/plugin/task/{key}/dryrun</code></td><td>干跑调试</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/system-task/list</code></td><td>系统任务列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/system-task/log-cleanup</code></td><td>日志清理任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/system-info/instances</code></td><td>节点实例</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/authz/catalog</code></td><td>权限目录</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/ratio_sync/channels</code></td><td>可同步渠道</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/ratio_sync/fetch</code></td><td>拉取上游倍率</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/group/</code></td><td>分组列表</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>订阅管理（管理员）</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/admin/plans</code></td><td>套餐列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/plans</code></td><td>创建套餐</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/subscription/admin/plans/{id}</code></td><td>更新套餐</td></tr>
+        <tr><td><span class="m patch">PATCH</span></td><td><code>/api/subscription/admin/plans/{id}</code></td><td>上下架套餐</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/plans/{id}/subscriptions/reset</code></td><td>重置该套餐订阅</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/bind</code></td><td>手动绑定订阅</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/admin/users/{id}/subscriptions</code></td><td>用户订阅列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/users/{id}/subscriptions</code></td><td>为用户开通订阅</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/users/{id}/subscriptions/reset</code></td><td>重置用户订阅</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/subscription/admin/user_subscriptions/{id}/invalidate</code></td><td>作废订阅</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/subscription/admin/user_subscriptions/{id}</code></td><td>删除订阅</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>任务查询、分组与其余系统接口</h4>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/task/self</code></td><td><span class="tag jwt">用户</span></td><td>我的任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/task</code></td><td><span class="tag adm">管理员</span></td><td>全部任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/task/{task_id}/artifacts</code></td><td><span class="tag jwt">用户</span></td><td>任务产物（控制台）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/mj/self</code></td><td><span class="tag jwt">用户</span></td><td>我的 Midjourney 任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/mj/</code></td><td><span class="tag adm">管理员</span></td><td>全部 Midjourney 任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/task_plugin_options</code></td><td>task_plugin:bind</td><td>任务插件选项</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/prefill_group/</code></td><td><span class="tag adm">管理员</span></td><td>预设分组列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/prefill_group/</code></td><td><span class="tag adm">管理员</span></td><td>新建预设分组</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/prefill_group/</code></td><td><span class="tag adm">管理员</span></td><td>更新预设分组</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/prefill_group/{id}</code></td><td><span class="tag adm">管理员</span></td><td>删除预设分组</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/models/delete</code></td><td><span class="tag adm">管理员</span></td><td>待删除模型（预览）</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/models/delete</code></td><td><span class="tag adm">管理员</span></td><td>批量删除模型</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/vendors/search</code></td><td><span class="tag adm">管理员</span></td><td>搜索供应商</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/vendors/{id}</code></td><td><span class="tag adm">管理员</span></td><td>供应商详情</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/vendors/</code></td><td><span class="tag adm">管理员</span></td><td>更新供应商</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/vendors/{id}</code></td><td><span class="tag adm">管理员</span></td><td>删除供应商</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task/{key}/versions</code></td><td><span class="tag adm">Root</span></td><td>插件版本列表</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/plugin/task/{key}/versions/{version}</code></td><td><span class="tag adm">Root</span></td><td>删除插件版本</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task/{key}/icon</code></td><td><span class="tag adm">Root</span></td><td>插件图标</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task/runtime/status</code></td><td><span class="tag adm">Root</span></td><td>插件运行时状态</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/plugin/task/marketplace/sources</code></td><td><span class="tag adm">Root</span></td><td>插件市场源</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/plugin/task/marketplace/sources</code></td><td><span class="tag adm">Root</span></td><td>更新市场源</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/option/payment_compliance</code></td><td><span class="tag adm">Root</span></td><td>支付合规确认</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/option/passkey/domains</code></td><td><span class="tag adm">Root</span></td><td>Passkey 域名</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/option/channel_affinity_cache</code></td><td><span class="tag adm">Root</span></td><td>渠道亲和缓存</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/option/channel_affinity_cache</code></td><td><span class="tag adm">Root</span></td><td>清理亲和缓存</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/custom-oauth-provider/discovery</code></td><td><span class="tag adm">Root</span></td><td>OIDC 发现文档</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/custom-oauth-provider/</code></td><td><span class="tag adm">Root</span></td><td>自定义 OAuth 列表</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/custom-oauth-provider/</code></td><td><span class="tag adm">Root</span></td><td>新建自定义 OAuth</td></tr>
+        <tr><td><span class="m put">PUT</span></td><td><code>/api/custom-oauth-provider/{id}</code></td><td><span class="tag adm">Root</span></td><td>更新自定义 OAuth</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/custom-oauth-provider/{id}</code></td><td><span class="tag adm">Root</span></td><td>删除自定义 OAuth</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/system-task/current</code></td><td><span class="tag adm">Root</span></td><td>当前系统任务</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/system-task/{task_id}</code></td><td><span class="tag adm">Root</span></td><td>系统任务详情</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/system-task/history</code></td><td><span class="tag adm">Root</span></td><td>清理任务历史</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/system-info/stale-instances</code></td><td><span class="tag adm">Root</span></td><td>清理离线实例</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/system-info/instances/{node_name}</code></td><td><span class="tag adm">Root</span></td><td>删除指定实例</td></tr>
+        <tr><td><span class="m delete">DELETE</span></td><td><code>/api/performance/disk_cache</code></td><td><span class="tag adm">Root</span></td><td>清理磁盘缓存</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/performance/reset_stats</code></td><td><span class="tag adm">Root</span></td><td>重置性能统计</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="ep-token-create">7.3 关键接口：创建站点令牌</h3>
+    <div class="ep" id="ep-token-create-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/api/token/</code><span class="tag jwt">用户</span><span class="desc">创建 sk- 令牌</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>name</td><td>string</td><td class="req">是</td><td>名称，≤ 50 字符</td></tr>
+            <tr><td>remain_quota</td><td>integer</td><td class="opt">否</td><td>额度，<code>unlimited_quota=false</code> 时生效</td></tr>
+            <tr><td>unlimited_quota</td><td>boolean</td><td class="opt">否</td><td>是否无限额度</td></tr>
+            <tr><td>expired_time</td><td>integer</td><td class="opt">否</td><td>过期时间戳，<code>-1</code> 表示永不过期</td></tr>
+            <tr><td>model_limits_enabled</td><td>boolean</td><td class="opt">否</td><td>是否启用模型限制</td></tr>
+            <tr><td>model_limits</td><td>string</td><td class="opt">否</td><td>允许的模型名，逗号或换行分隔</td></tr>
+            <tr><td>allow_ips</td><td>string</td><td class="opt">否</td><td>IP 白名单，换行分隔，支持 CIDR</td></tr>
+            <tr><td>group</td><td>string</td><td class="opt">否</td><td>固定分组；<code>auto</code> 表示自动</td></tr>
+            <tr><td>auto_groups</td><td>array</td><td class="opt">否</td><td><code>group=auto</code> 时的候选分组</td></tr>
+            <tr><td>cross_group_retry</td><td>boolean</td><td class="opt">否</td><td>自动分组下是否跨组重试</td></tr>
+            <tr><td>allow_user_quota_query</td><td>boolean</td><td class="opt">否</td><td>是否允许该令牌查询用户总额度，默认 <code>true</code></td></tr>
+          </tbody>
+        </table></div>
+        <p>响应只返回成功标志，不返回明文 key；随后调用 <code>POST /api/token/{id}/key</code> 获取。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "success": true, "message": "" }</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ep-token-key">7.4 关键接口：获取令牌明文</h3>
+    <div class="ep" id="ep-token-key-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/api/token/{id}/key</code><span class="tag jwt">用户</span><span class="desc">读取明文 key</span></div>
+      <div class="ep-body">
+        <p>受敏感操作限流保护，并写入审计日志。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "success": true, "message": "", "data": { "key": "1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x" } }</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ep-log-list">7.5 关键接口：日志查询</h3>
+    <div class="ep" id="ep-log-list-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/log/self</code><span class="tag jwt">用户</span><span class="desc">分页查询消费日志</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>p / page_size</td><td>int</td><td>分页参数</td></tr>
+            <tr><td>type</td><td>int</td><td>日志类型过滤（见下方枚举）</td></tr>
+            <tr><td>start_timestamp / end_timestamp</td><td>int</td><td>时间范围（秒）</td></tr>
+            <tr><td>model_name</td><td>string</td><td>模型名</td></tr>
+            <tr><td>token_name</td><td>string</td><td>令牌名</td></tr>
+            <tr><td>group</td><td>string</td><td>分组</td></tr>
+            <tr><td>request_id / upstream_request_id</td><td>string</td><td>请求 ID 精确定位</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": {
+    "page": 1,
+    "page_size": 20,
+    "total": 2,
+    "items": [
+      {
+        "id": 1024, "created_at": 1730000000, "type": 2,
+        "model_name": "gpt-4o-mini", "quota": 21,
+        "prompt_tokens": 12, "completion_tokens": 9,
+        "use_time": 2, "is_stream": false,
+        "token_name": "生产环境", "group": "default",
+        "request_id": "20251030120000abc", "other": {}
+      }
+    ]
+  }
+}</code></pre></div>
+        <p>时间范围受系统「日志最长查询区间」限制，超出会返回错误。</p>
+      </div>
+    </div>
+
+    <h3 id="ep-log-stat">7.6 统计接口：/api/log/stat 与 /api/log/self/stat</h3>
+    <p>两个接口返回同一套聚合结果（消费额度 + 最近一分钟的 RPM/TPM），区别只在统计范围与权限。</p>
+
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>对比项</th><th><code>/api/log/stat</code></th><th><code>/api/log/self/stat</code></th></tr></thead>
+      <tbody>
+        <tr><td>权限</td><td><span class="tag adm">管理员</span></td><td><span class="tag jwt">用户</span></td></tr>
+        <tr><td>统计对象</td><td>全站，可用 <code>username</code> 收窄</td><td>固定为当前登录用户（<code>username</code> 参数无效）</td></tr>
+        <tr><td>时间区间限制</td><td>无（管理员不受限）</td><td>普通用户受“最长日志区间”限制；管理员不受限</td></tr>
+        <tr><td>可过滤维度</td><td>模型、令牌名、渠道、分组、用户名</td><td>模型、令牌名、渠道、分组</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="ep" id="ep-log-stat-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/log/stat</code><span class="tag adm">管理员</span><span class="desc">全站消费统计</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>type</td><td>int</td><td class="opt">否</td><td>日志类型。<b>当前版本解析但不参与过滤</b>，统计固定只算消费日志（<code>type=2</code>）</td></tr>
+            <tr><td>start_timestamp</td><td>int64</td><td class="opt">否</td><td>起始秒级时间戳；<code>0</code> 或缺省表示不限起点</td></tr>
+            <tr><td>end_timestamp</td><td>int64</td><td class="opt">否</td><td>结束秒级时间戳；<code>0</code> 或缺省表示不限终点</td></tr>
+            <tr><td>model_name</td><td>string</td><td class="opt">否</td><td>模型名精确匹配</td></tr>
+            <tr><td>username</td><td>string</td><td class="opt">否</td><td>用户名精确匹配</td></tr>
+            <tr><td>token_name</td><td>string</td><td class="opt">否</td><td>令牌名精确匹配</td></tr>
+            <tr><td>channel</td><td>int</td><td class="opt">否</td><td>渠道 ID；<code>0</code> 表示全部</td></tr>
+            <tr><td>group</td><td>string</td><td class="opt">否</td><td>使用分组</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": {
+    "quota": 128400,
+    "rpm": 7,
+    "tpm": 1893
+  }
+}</code></pre></div>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>quota</td><td>统计区间内消费日志的额度总和；金额 = <code>quota / quota_per_unit</code></td></tr>
+            <tr><td>rpm</td><td>最近 60 秒内的消费请求数（<b>与上面的时间区间无关</b>）</td></tr>
+            <tr><td>tpm</td><td>最近 60 秒内 <code>prompt_tokens + completion_tokens</code> 之和（同样与区间无关）</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note"><b>注意：</b><code>quota</code> 走时间区间过滤，而 <code>rpm</code>/<code>tpm</code> 是实时窗口指标，固定取「当前时间往前 60 秒」。所以查历史区间时 rpm/tpm 反映的是当前瞬时负载，不要用于历史曲线。</div>
+      </div>
+    </div>
+
+    <div class="ep" id="ep-log-self-stat-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/log/self/stat</code><span class="tag jwt">用户</span><span class="desc">我的消费统计</span></div>
+      <div class="ep-body">
+        <p>参数同 <code>/api/log/stat</code>，但 <code>username</code> 不生效（始终取会话用户）。</p>
+        <p>普通用户（<code>role &lt; 10</code>）的时间区间会被「最长日志区间」裁剪：</p>
+        <ul>
+          <li><code>start_timestamp</code> 缺省或为 <code>0</code> 时，自动替换为「当前时间 − 最长区间」；</li>
+          <li>结束时间缺省或为 <code>0</code> 时，按当前时间计算跨度；</li>
+          <li>若区间长度超过最长区间，直接返回错误，不会截断。</li>
+        </ul>
+        <p>最长区间由系统设置 <code>log_setting.max_range_days</code> 控制，默认 <code>365</code> 天。</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": false,
+  "message": "The time range cannot exceed 365 days"
+}</code></pre></div>
+        <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code># 近 7 天我的消费总额
+curl "https://api.example.com/api/log/self/stat?start_timestamp=$(date -d '7 days ago' +%s)&amp;end_timestamp=$(date +%s)" \
+  -H "Authorization: Bearer nap_xxx"</code></pre></div>
+        <div class="note">成功率、平均耗时等指标不在该接口返回；如需按模型/渠道拆分，请用 <code>GET /api/log/self</code>（分页明细）或 <code>GET /api/data/self</code>（趋势）。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-data-self">7.7 用量趋势：/api/data/self</h3>
+    <div class="ep" id="ep-data-self-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/data/self</code><span class="tag jwt">用户</span><span class="desc">按小时聚合的我的用量</span></div>
+      <div class="ep-body">
+        <p>控制台「数据看板」的柱状图数据源。数据来自独立聚合表 <code>quota_data</code>，不是实时日志表。</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>start_timestamp</td><td>int64</td><td class="opt">否</td><td>起始秒级时间戳；缺省或 <code>0</code> 时按「当前时间 − 最长区间」补齐</td></tr>
+            <tr><td>end_timestamp</td><td>int64</td><td class="req">是</td><td>结束秒级时间戳。<b>必须显式传入</b>，传 <code>0</code> 会使查询条件变成“时间戳不大于 0”，返回空数组</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": [
+    {
+      "id": 0,
+      "user_id": 1,
+      "username": "demo",
+      "model_name": "gpt-4o-mini",
+      "created_at": 1730001600,
+      "use_group": "",
+      "token_id": 0,
+      "channel_id": 0,
+      "node_name": "",
+      "token_used": 3200,
+      "count": 12,
+      "quota": 8400,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0
+    }
+  ]
+}</code></pre></div>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>created_at</td><td>小时桶的起始秒级时间戳（已向下取整到整点），用于横轴</td></tr>
+            <tr><td>model_name</td><td>模型名，同一小时按模型拆行</td></tr>
+            <tr><td>count</td><td>该小时该模型的请求数</td></tr>
+            <tr><td>quota</td><td>该小时该模型的消费额度；金额 = <code>quota / quota_per_unit</code></td></tr>
+            <tr><td>token_used</td><td>输入 + 输出 token 数</td></tr>
+            <tr><td>cache_read_tokens / cache_creation_tokens</td><td>命中缓存读取 / 写入缓存的 token 数</td></tr>
+            <tr><td>id、use_group、token_id、channel_id、node_name</td><td>聚合查询未选取这些列，<b>恒为零值</b>，可忽略</td></tr>
+          </tbody>
+        </table></div>
+        <div class="warn"><b>两个前提：</b>① 聚合数据由后台任务按 <code>DATA_EXPORT_ENABLED</code>（默认开启）周期性写入，默认每 <code>5</code> 分钟落盘一次，因此有分钟级延迟，刚发起的请求不会立刻出现；② 若站点关闭了数据导出，该接口会稳定返回空数组。</div>
+        <p>同一小时、同一模型的多条原始记录已在 SQL 中 <code>sum</code> 合并，前端可直接把 <code>created_at</code> 当作 x 轴、<code>quota</code> 或 <code>count</code> 当作 y 轴。</p>
+        <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code># 最近 24 小时
+curl "https://api.example.com/api/data/self?start_timestamp=$(date -d '24 hours ago' +%s)&amp;end_timestamp=$(date +%s)" \
+  -H "Authorization: Bearer nap_xxx"</code></pre></div>
+        <div class="note">需要按渠道/分组/令牌维度拆分时，聚合表没有对应粒度，请改用 <code>GET /api/log/self</code> 明细。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-user-manage">7.8 用户管理动作：/api/user/manage</h3>
+    <div class="ep" id="ep-user-manage-post">
+      <div class="ep-head"><span class="m post">POST</span><code class="path">/api/user/manage</code><span class="tag adm">管理员</span><span class="desc">禁用 / 启用 / 删除 / 升降级 / 调额</span></div>
+      <div class="ep-body">
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>id</td><td>int</td><td class="req">是</td><td>目标用户 ID</td></tr>
+            <tr><td>action</td><td>string</td><td class="req">是</td><td><code>enable</code>、<code>disable</code>、<code>delete</code>、<code>promote</code>、<code>demote</code>、<code>add_quota</code></td></tr>
+            <tr><td>value</td><td>int</td><td class="opt">否</td><td>仅 <code>add_quota</code> 使用：额度变更量或目标值</td></tr>
+            <tr><td>mode</td><td>string</td><td class="opt">否</td><td>仅 <code>add_quota</code> 使用：<code>add</code>、<code>subtract</code>、<code>override</code></td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>action</th><th>效果</th><th>前置条件</th><th>副作用</th></tr></thead>
+          <tbody>
+            <tr><td><code>enable</code></td><td>状态置为启用</td><td>目标角色低于操作者（Root 例外）</td><td>恢复登录与转发</td></tr>
+            <tr><td><code>disable</code></td><td>状态置为禁用</td><td>目标不能是超级管理员</td><td>该用户所有令牌立即无法转发</td></tr>
+            <tr><td><code>delete</code></td><td>删除用户</td><td>目标不能是超级管理员；需二次验证</td><td>级联删除其令牌、清空令牌缓存、撤销全部会话</td></tr>
+            <tr><td><code>promote</code></td><td>角色升为管理员（<code>10</code>）</td><td><b>仅 Root 可调用</b>；目标当前不是管理员</td><td>需二次验证</td></tr>
+            <tr><td><code>demote</code></td><td>角色降为普通用户（<code>1</code>）</td><td>目标不能是超级管理员，且当前是管理员</td><td>清空其 Casbin 权限、重载策略、撤销全部会话</td></tr>
+            <tr><td><code>add_quota</code></td><td>调整钱包额度</td><td>目标角色低于操作者（Root 例外）</td><td>写一条充值类型（<code>type=1</code>）日志与审计记录</td></tr>
+          </tbody>
+        </table></div>
+
+        <h4 style="margin:22px 0 10px">额度调整模式（action = add_quota）</h4>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>mode</th><th>计算方式</th><th>value 约束</th></tr></thead>
+          <tbody>
+            <tr><td><code>add</code></td><td>余额 = 当前余额 + value</td><td>必须 &gt; 0</td></tr>
+            <tr><td><code>subtract</code></td><td>余额 = 当前余额 − value</td><td>必须 &gt; 0；可扣成负数，但受钱包上下限约束</td></tr>
+            <tr><td><code>override</code></td><td>余额 = value（绝对值覆盖）</td><td>允许 <code>0</code> 与负数；绝对值不得超过钱包上限</td></tr>
+          </tbody>
+        </table></div>
+        <p>余额变更在数据库事务中加行锁完成，只把「提交后的差值」同步到余额缓存，未结算的在途预扣额度不受影响。<code>add_quota</code> <b>不需要</b>二次验证。</p>
+
+        <h4 style="margin:22px 0 10px">二次验证（X-Security-Proof）</h4>
+        <p><code>delete</code>、<code>enable</code>、<code>disable</code>、<code>promote</code>、<code>demote</code> 都需要先获取一次性凭证，再通过请求头 <code>X-Security-Proof</code> 提交。scope 与 context 必须与目标操作完全一致，否则返回 <code>SECURITY_PROOF_CONTEXT_MISMATCH</code>：</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>action</th><th>scope</th><th>context</th></tr></thead>
+          <tbody>
+            <tr><td><code>delete</code></td><td><code>admin.user.delete</code></td><td><code>{"user_id": 42}</code></td></tr>
+            <tr><td>其余管理动作</td><td><code>admin.user.manage</code></td><td><code>{"user_id": 42, "action": "disable"}</code></td></tr>
+          </tbody>
+        </table></div>
+        <p>凭证有效期约 60 秒且只能使用一次（重复提交返回 <code>SECURITY_PROOF_CONSUMED</code>）。获取方式：</p>
+        <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code># 1) 换取一次性凭证（需浏览器会话 Cookie 或已登录的 PAT 身份）
+curl -X POST "https://api.example.com/api/verify" \
+  -H "Authorization: Bearer nap_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"method":"password","password":"your-password","scope":"admin.user.manage","context":{"user_id":42,"action":"disable"}}'
+
+# 返回
+# {"success":true,"message":"","data":{"proof_token":"p_9f2c...","expires_at":1730000060,
+#   "method":"password","scope":"admin.user.manage"}}
+
+# 2) 携带凭证执行动作（60 秒内，且只能成功一次）
+curl -X POST "https://api.example.com/api/user/manage" \
+  -H "Authorization: Bearer nap_xxx" \
+  -H "X-Security-Proof: p_9f2c..." \
+  -H "Content-Type: application/json" \
+  -d '{"id":42,"action":"disable"}'</code></pre></div>
+
+        <h4 style="margin:22px 0 10px">响应</h4>
+        <p>普通管理动作返回精简后的角色与状态：</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{
+  "success": true,
+  "message": "",
+  "data": { "role": 1, "status": 2 }
+}</code></pre></div>
+        <p>额度调整返回不含 <code>data</code>：</p>
+        <div class="code has-lang" data-lang="json"><button class="copy">复制</button><pre><code>{ "success": true, "message": "" }</code></pre></div>
+
+        <h4 style="margin:22px 0 10px">常见错误</h4>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>message</th><th>HTTP</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td>Invalid parameters</td><td>200 / <code>success:false</code></td><td>缺少 <code>action</code>、未知 action、<code>mode</code> 非法或 <code>value</code> 不合法</td></tr>
+            <tr><td>User does not exist</td><td>200 / <code>success:false</code></td><td><code>id</code> 不存在（含已软删除用户）</td></tr>
+            <tr><td>No permission to update users of same or higher permission level</td><td>200 / <code>success:false</code></td><td>目标角色不低于操作者，且操作者不是 Root</td></tr>
+            <tr><td>Cannot disable super administrator user<br>Cannot delete super administrator account<br>Cannot demote super administrator user</td><td>200 / <code>success:false</code></td><td>对 Root 账户执行禁用/删除/降级</td></tr>
+            <tr><td>Regular administrators cannot promote other users to administrator</td><td>200 / <code>success:false</code></td><td>非 Root 调用 <code>promote</code></td></tr>
+            <tr><td>This user is already an administrator<br>This user is already a common user</td><td>200 / <code>success:false</code></td><td><code>promote</code>/<code>demote</code> 状态已满足</td></tr>
+            <tr><td>Quota change amount cannot be zero</td><td>200 / <code>success:false</code></td><td><code>add</code>/<code>subtract</code> 的 <code>value</code> 为 0</td></tr>
+            <tr><td>Additional verification required（<code>SECURITY_PROOF_REQUIRED</code>）</td><td>403</td><td>缺少 <code>X-Security-Proof</code> 头</td></tr>
+            <tr><td><code>SECURITY_PROOF_EXPIRED</code> / <code>SECURITY_PROOF_CONSUMED</code></td><td>403</td><td>凭证超过 60 秒或已被使用</td></tr>
+            <tr><td><code>SECURITY_PROOF_SCOPE_MISMATCH</code> / <code>SECURITY_PROOF_CONTEXT_MISMATCH</code></td><td>403</td><td>scope 或 context 与操作不匹配</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note">批量场景请为每个目标用户单独获取凭证；<code>delete</code> 与普通管理动作的 scope 不同，不能混用同一张凭证。</div>
+      </div>
+    </div>
+
+    <h3 id="ep-status">7.9 关键接口：站点状态</h3>
+    <div class="ep" id="ep-status-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/status</code><span class="tag pub">公开</span><span class="desc">站点公开配置</span></div>
+      <div class="ep-body">
+        <p>返回版本、功能开关、OAuth 配置、额度单位、模型广场开关等。常用字段：</p>
+        <div class="table-wrap"><table class="tbl">
+          <thead><tr><th>字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>version</td><td>服务端版本</td></tr>
+            <tr><td>system_name / logo / footer_html</td><td>站点品牌信息</td></tr>
+            <tr><td>quota_per_unit</td><td>1 美元对应的 quota 数</td></tr>
+            <tr><td>display_in_currency / quota_display_type</td><td>额度展示方式（USD / CNY / TOKENS）</td></tr>
+            <tr><td>register_enabled / password_login_enabled</td><td>注册与登录开关</td></tr>
+            <tr><td>enable_drawing / enable_task</td><td>绘图、任务功能开关</td></tr>
+            <tr><td>turnstile_check / turnstile_site_key</td><td>人机验证配置</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <h3 id="ep-pricing">7.10 关键接口：模型定价</h3>
+    <div class="ep" id="ep-pricing-get">
+      <div class="ep-head"><span class="m get">GET</span><code class="path">/api/pricing</code><span class="tag pub">公开/用户</span><span class="desc">模型价格表</span></div>
+      <div class="ep-body">
+        <p>返回 <code>data</code>（模型价格数组）、<code>vendors</code>、<code>group_ratio</code>、<code>usable_group</code>、<code>supported_endpoint</code>、<code>auto_groups</code>、<code>pricing_version</code>。是否允许匿名访问由站点「模型广场」模块配置决定。</p>
+      </div>
+    </div>
+
+    <h2 id="public">8. 公开接口</h2>
+    <p>以下接口无需鉴权（部分受站点开关控制），适合前端渲染与第三方回调。</p>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/status</code></td><td>站点状态与配置</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/setup</code></td><td>初始化状态</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/setup</code></td><td>首次初始化（仅未初始化可用）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/notice</code></td><td>公告</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/about</code></td><td>关于页</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user-agreement</code></td><td>用户协议</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/privacy-policy</code></td><td>隐私政策</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/home_page_content</code></td><td>首页自定义内容</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/uptime/status</code></td><td>Uptime Kuma 状态</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/perf-metrics</code></td><td>性能指标（受模块开关与登录状态控制）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/perf-metrics/summary</code></td><td>性能指标汇总</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/rankings</code></td><td>模型排行榜（受模块开关控制）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/ratio_config</code></td><td>倍率配置</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/verification</code></td><td>发送邮箱验证码</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/reset_password</code></td><td>发送重置密码邮件</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/reset</code></td><td>提交密码重置</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/oauth/state</code></td><td>生成 OAuth state</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/oauth/{provider}</code></td><td>OAuth 回调（github / discord / linuxdo / oidc / telegram 等）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/oauth/wechat</code></td><td>微信登录回调</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/oauth/telegram/login</code></td><td>Telegram 登录回调</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/stripe/webhook</code></td><td>Stripe 支付回调</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/creem/webhook</code></td><td>Creem 支付回调</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/waffo/webhook</code></td><td>Waffo 支付回调</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/waffo-pancake/webhook/{env}</code></td><td>Waffo Pancake 回调（<code>env</code> 区分测试/生产）</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/user/epay/notify</code></td><td>易支付回调</td></tr>
+        <tr><td><span class="m post">POST</span></td><td><code>/api/user/epay/notify</code></td><td>易支付回调</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/epay/return</code></td><td>订阅支付同步跳转</td></tr>
+        <tr><td><span class="m get">GET</span></td><td><code>/api/subscription/epay/notify</code></td><td>订阅支付异步通知</td></tr>
+      </tbody>
+    </table></div>
+    <div class="warn"><b>回调类接口</b>由支付平台发起，请勿在客户端调用；验签与幂等由服务端处理。</div>
+
+    <h2 id="error-codes">9. 错误码参考</h2>
+
+    <h3 id="relay-error-codes">9.1 转发接口错误码</h3>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>error.code</th><th>HTTP</th><th>含义</th><th>处理建议</th></tr></thead>
+      <tbody>
+        <tr><td><code>invalid_request</code></td><td>400</td><td>请求体或参数不合法</td><td>检查字段类型与必填项</td></tr>
+        <tr><td><code>model_not_found</code></td><td>404</td><td>模型不存在或未被任何渠道支持</td><td>用 <code>GET /v1/models</code> 核对模型名</td></tr>
+        <tr><td><code>access_denied</code></td><td>403</td><td>令牌无权使用该模型 / IP 受限</td><td>检查令牌模型限制与 IP 白名单</td></tr>
+        <tr><td><code>insufficient_user_quota</code></td><td>403</td><td>用户额度不足</td><td>充值或更换令牌</td></tr>
+        <tr><td><code>pre_consume_token_quota_failed</code></td><td>403</td><td>令牌预扣额度失败（余额不足）</td><td>检查令牌剩余额度</td></tr>
+        <tr><td><code>channel:no_available_key</code></td><td>503</td><td>渠道无可用密钥</td><td>联系管理员补充渠道</td></tr>
+        <tr><td><code>do_request_failed</code></td><td>502</td><td>请求上游失败</td><td>可重试；持续失败联系管理员</td></tr>
+        <tr><td><code>bad_response_status_code</code></td><td>502</td><td>上游返回非 2xx</td><td>可重试</td></tr>
+        <tr><td><code>empty_response</code></td><td>502</td><td>上游返回空响应</td><td>可重试</td></tr>
+        <tr><td><code>bad_response_body</code></td><td>502</td><td>上游响应解析失败</td><td>可重试</td></tr>
+        <tr><td><code>sensitive_words_detected</code></td><td>400</td><td>命中敏感词</td><td>修改提示词</td></tr>
+        <tr><td><code>prompt_blocked</code></td><td>400</td><td>提示词被拦截</td><td>修改提示词</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="panel-error-codes">9.2 管理 API 错误码</h3>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>code</th><th>HTTP</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>ACCESS_TOKEN_ROUTE_UNDECLARED</code></td><td>403</td><td>该路由未声明所需 scope，PAT 一律拒绝</td></tr>
+        <tr><td><code>ACCESS_TOKEN_SCOPE_DENIED</code></td><td>403</td><td>PAT scope 不足</td></tr>
+        <tr><td><code>ACCESS_TOKEN_EXPIRED</code></td><td>401</td><td>PAT 已过期</td></tr>
+        <tr><td><code>ACCESS_TOKEN_LEGACY_RETIRED</code></td><td>401</td><td>旧版令牌已停用</td></tr>
+        <tr><td><code>AUTH_SESSION_REQUIRED</code></td><td>403</td><td>该接口仅接受浏览器登录会话</td></tr>
+        <tr><td><code>AUTH_SESSION_MISMATCH</code></td><td>409</td><td><code>X-Auth-Session</code> 与 Refresh Cookie 不一致</td></tr>
+        <tr><td><code>AUTH_SESSION_LIMIT</code></td><td>409</td><td>活跃会话数超限</td></tr>
+        <tr><td><code>AUTH_SESSION_ISSUANCE_LIMIT</code></td><td>429</td><td>窗口内签发次数超限</td></tr>
+        <tr><td><code>SECURITY_VERIFICATION_FAILED</code></td><td>403</td><td>二次验证失败</td></tr>
+        <tr><td><code>SECURITY_VERIFICATION_LOCKED</code></td><td>403</td><td>验证失败次数过多，已锁定</td></tr>
+        <tr><td><code>SECURITY_CONTEXT_INVALID</code></td><td>400</td><td>验证上下文不匹配</td></tr>
+        <tr><td><code>SECURITY_PROOF_SCOPE_MISMATCH</code></td><td>403</td><td>Proof 与目标操作不匹配</td></tr>
+        <tr><td><code>TWOFA_CODE_INVALID</code></td><td>403</td><td>2FA 验证码错误</td></tr>
+        <tr><td><code>PASSWORD_POLICY_REJECTED</code></td><td>400</td><td>新密码不符合策略</td></tr>
+        <tr><td><code>CURRENT_PASSWORD_INVALID</code></td><td>400</td><td>当前密码错误</td></tr>
+        <tr><td><code>LAST_LOGIN_METHOD</code></td><td>400</td><td>不能移除最后一个登录方式</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="troubleshooting">9.3 排查清单</h3>
+    <ol>
+      <li><b>401 令牌无效</b>：确认 header 为 <code>Authorization: Bearer sk-...</code>，且令牌未被禁用/删除。</li>
+      <li><b>403 模型不允许</b>：令牌开启模型限制时，检查 <code>model_limits</code>；或改用 <code>GET /v1/models</code> 返回的模型名。</li>
+      <li><b>403 额度不足</b>：调用 <code>GET /api/usage/token/</code> 查看 <code>total_available</code>。</li>
+      <li><b>404 路径不存在</b>：注意 <code>/v1</code> 与 <code>/api</code> 前缀区别；管理 API 部分路径带尾斜杠（如 <code>/api/token/</code>）。</li>
+      <li><b>429 限流</b>：按 <code>Retry-After</code> 语义退避（若无该头，使用指数退避）。</li>
+      <li><b>400 敏感词 / 内容拦截</b>：调整提示词，或联系管理员检查站点策略。</li>
+    </ol>
+
+    <h2 id="examples">10. 调用示例</h2>
+
+    <h3 id="ex-python">10.1 Python（OpenAI SDK）</h3>
+    <div class="code has-lang" data-lang="python"><button class="copy">复制</button><pre><code>from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.example.com/v1",
+    api_key="sk-1a2b3c4d5e6f7g8h9i0j",
+)
+
+# 非流式
+resp = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "你好"}],
+)
+print(resp.choices[0].message.content)
+
+# 流式
+stream = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "写一首短诗"}],
+    stream=True,
+)
+for chunk in stream:
+    if chunk.choices and chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)</code></pre></div>
+
+    <h3 id="ex-node">10.2 Node.js（OpenAI SDK）</h3>
+    <div class="code has-lang" data-lang="javascript"><button class="copy">复制</button><pre><code>import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://api.example.com/v1",
+  apiKey: "sk-1a2b3c4d5e6f7g8h9i0j",
+});
+
+const stream = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "你好" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}</code></pre></div>
+
+    <h3 id="ex-claude">10.3 Claude / Gemini 原生客户端</h3>
+    <div class="tabs">
+      <div class="tabbar"><button class="active" data-tab="claude">Claude</button><button data-tab="gemini">Gemini</button></div>
+      <div class="pane active" data-pane="claude">
+        <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code>export ANTHROPIC_BASE_URL="https://api.example.com"
+export ANTHROPIC_API_KEY="sk-1a2b3c4d5e6f7g8h9i0j"
+
+curl "$ANTHROPIC_BASE_URL/v1/messages" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 256,
+    "messages": [{"role":"user","content":"你好"}]
+  }'</code></pre></div>
+      </div>
+      <div class="pane" data-pane="gemini">
+        <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code>curl "https://api.example.com/v1beta/models/gemini-2.0-flash:generateContent?key=sk-1a2b3c4d5e6f7g8h9i0j" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{"parts": [{"text": "你好"}]}]
+  }'</code></pre></div>
+      </div>
+    </div>
+
+    <h3 id="ex-task">10.4 任务提交与轮询</h3>
+    <div class="code has-lang" data-lang="python"><button class="copy">复制</button><pre><code>import time, requests
+
+BASE = "https://api.example.com"
+HEADERS = {"Authorization": "Bearer sk-1a2b3c4d5e6f7g8h9i0j"}
+
+# 1) 提交
+task = requests.post(f"{BASE}/v1/videos", headers=HEADERS, json={
+    "model": "sora-2",
+    "prompt": "一只在沙滩上冲浪的猫",
+    "seconds": "8",
+}).json()
+task_id = task["id"]
+
+# 2) 轮询
+while True:
+    info = requests.get(f"{BASE}/v1/videos/{task_id}", headers=HEADERS).json()
+    if info["status"] in ("completed", "failed"):
+        break
+    time.sleep(5)
+
+# 3) 下载产物
+if info["status"] == "completed":
+    with open("result.mp4", "wb") as f:
+        f.write(requests.get(f"{BASE}/v1/videos/{task_id}/content", headers=HEADERS).content)</code></pre></div>
+
+    <h3 id="ex-usage">10.5 额度自查</h3>
+    <div class="code has-lang" data-lang="python"><button class="copy">复制</button><pre><code>import requests
+
+resp = requests.get(
+    "https://api.example.com/api/usage/token/",
+    headers={"Authorization": "Bearer sk-1a2b3c4d5e6f7g8h9i0j"},
+).json()
+
+data = resp["data"]
+print("剩余额度：", data["total_available"], "已用：", data["total_used"])</code></pre></div>
+
+    <h3 id="ex-pat">10.6 使用 PAT 调用管理 API</h3>
+    <div class="code has-lang" data-lang="bash"><button class="copy">复制</button><pre><code># 列出本账号的站点令牌（需要 api_key:read）
+curl "https://api.example.com/api/token/?p=1&amp;page_size=20" \
+  -H "Authorization: Bearer nap_4f9c2b1e7a..."
+
+# 查询用户列表（需要 user:read）
+curl "https://api.example.com/api/user/?p=1&amp;page_size=20" \
+  -H "Authorization: Bearer nap_4f9c2b1e7a..."</code></pre></div>
+
+    <hr>
+    <h3 id="changelog">文档维护说明</h3>
+    <ul>
+      <li>本文档描述的是网关对外契约；具体可用模型、端点开关与计费价格由站点配置决定，请以 <code>GET /api/status</code>、<code>GET /v1/models</code>、<code>GET /api/pricing</code> 的实时返回为准。</li>
+      <li>插件原生路由（第 5.3 节）随安装插件变化，升级插件后请重新核对。</li>
+      <li>如遇接口行为与文档不一致，请携带 <code>request_id</code>（响应头或日志中）联系站点管理员。</li>
+    </ul>
+
+    <p style="margin-top:36px;color:var(--fg-mute);font-size:13px">开放接口文档 · v1.0 · 生成于 2026-10-30</p>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var content = document.getElementById("content");
+  var toc = document.getElementById("toc");
+  var sidebar = document.getElementById("sidebar");
+
+  /* ---------- TOC ---------- */
+  var nodes = content.querySelectorAll("h2[id], h3[id]");
+
+  nodes.forEach(function(h){
+    var text = h.textContent.replace(/¶/g, "").trim();
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    a.textContent = text;
+    a.dataset.target = h.id;
+    a.className = h.tagName === "H3" ? "lv3" : "lv2";
+    toc.appendChild(a);
+  });
+
+  /* ---------- code language labels ---------- */
+  Array.prototype.forEach.call(content.querySelectorAll(".code[data-lang]"), function(block){
+    var label = document.createElement("span");
+    label.className = "lang";
+    label.textContent = block.dataset.lang;
+    block.insertBefore(label, block.firstChild);
+  });
+
+  /* ---------- search ---------- */
+  var search = document.getElementById("search");
+  search.addEventListener("input", function(){
+    var q = search.value.trim().toLowerCase();
+    var any = false;
+    Array.prototype.forEach.call(toc.querySelectorAll("a"), function(a){
+      var hit = !q || a.textContent.toLowerCase().indexOf(q) > -1;
+      a.classList.toggle("hidden", !hit);
+      if (hit) any = true;
+    });
+    var empty = toc.querySelector(".empty");
+    if (!any && q) {
+      if (!empty) { empty = document.createElement("div"); empty.className = "empty"; toc.appendChild(empty); }
+      empty.textContent = "未找到匹配项：" + q;
+    } else if (empty) {
+      empty.remove();
+    }
+  });
+
+  /* ---------- scrollspy ---------- */
+  var links = Array.prototype.slice.call(toc.querySelectorAll("a"));
+  var byId = {};
+  links.forEach(function(a){ byId[a.dataset.target] = a; });
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (!entry.isIntersecting) return;
+      var active = byId[entry.target.id];
+      if (!active) return;
+      links.forEach(function(a){ a.classList.remove("active"); });
+      active.classList.add("active");
+    });
+  }, { rootMargin: "-72px 0px -72% 0px", threshold: 0 });
+  nodes.forEach(function(h){ observer.observe(h); });
+
+  /* ---------- copy buttons ---------- */
+  content.addEventListener("click", function(e){
+    var btn = e.target.closest(".copy");
+    if (!btn) return;
+    var pre = btn.parentElement.querySelector("pre");
+    if (!pre) return;
+    var text = pre.innerText;
+    var done = function(){
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function(){ btn.textContent = old; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+    } else {
+      fallback(text, done);
+    }
+  });
+  function fallback(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (err) {}
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- tabs ---------- */
+  content.addEventListener("click", function(e){
+    var btn = e.target.closest(".tabbar button");
+    if (!btn) return;
+    var tabs = btn.closest(".tabs");
+    Array.prototype.forEach.call(tabs.querySelectorAll(".tabbar button"), function(b){ b.classList.remove("active"); });
+    Array.prototype.forEach.call(tabs.querySelectorAll(".pane"), function(p){ p.classList.remove("active"); });
+    btn.classList.add("active");
+    var pane = tabs.querySelector('.pane[data-pane="' + btn.dataset.tab + '"]');
+    if (pane) pane.classList.add("active");
+  });
+
+  /* ---------- mobile menu ---------- */
+  document.getElementById("menuBtn").addEventListener("click", function(){
+    sidebar.classList.toggle("open");
+  });
+  toc.addEventListener("click", function(e){
+    if (e.target.tagName === "A" && window.innerWidth <= 980) sidebar.classList.remove("open");
+  });
+})();
+</script>
+</body>
+</html>

@@ -68,7 +68,9 @@ export default defineConfig(({ envMode }) => {
     },
     server: {
       host: '0.0.0.0',
-      strictPort: false,
+      // Keep API backend on :3000; frontend HMR uses a separate port.
+      port: Number(process.env.PORT) || 5173,
+      strictPort: true,
       proxy: devProxy,
     },
     output: {

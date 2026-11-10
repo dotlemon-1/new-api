@@ -55,6 +55,7 @@ export interface AuthUser {
   stripe_customer?: string
   sidebar_modules?: string
   permissions?: UserPermissions
+  is_department_manager?: boolean
 }
 
 export interface LoginSession {

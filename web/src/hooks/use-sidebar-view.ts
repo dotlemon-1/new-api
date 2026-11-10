@@ -58,18 +58,60 @@ export function useSidebarView(): ResolvedSidebarView {
   const rootSidebarData = useSidebarData(badges)
   const configFilteredRoot = useSidebarConfig(rootSidebarData.navGroups)
 
+  const isDepartmentManager = useAuthStore(
+    (s) => Boolean(s.auth.user?.is_department_manager)
+  )
+
   const rootNavGroups = useMemo<NavGroup[]>(() => {
     const role = userRole ?? ROLE.GUEST
     const isAdmin = role >= ROLE.ADMIN
-    return configFilteredRoot
-      .filter((group) => (group.id === 'admin' ? isAdmin : true))
+    const groups = configFilteredRoot
+      .filter((group) =>
+        group.id === 'admin' ? isAdmin || isDepartmentManager : true
+      )
       .map((group) => {
-        const items = group.items.filter(
+        let items = group.items.filter(
           (item) => item.requiredRole === undefined || role >= item.requiredRole
         )
+        if (group.id === 'admin' && !isAdmin && isDepartmentManager) {
+          items = items.filter((item) => item.url === '/department-wallets')
+        }
         return items.length === group.items.length ? group : { ...group, items }
       })
-  }, [configFilteredRoot, userRole])
+
+    // Managers may have user sidebar_modules hiding the admin section; still
+    // expose Department Wallets from the unfiltered admin nav definition.
+    if (!isAdmin && isDepartmentManager) {
+      const hasDepartmentWallets = groups.some((group) =>
+        group.items.some((item) => 'url' in item && item.url === '/department-wallets')
+      )
+      if (!hasDepartmentWallets) {
+        const sourceAdmin = rootSidebarData.navGroups.find((g) => g.id === 'admin')
+        const deptItem = sourceAdmin?.items.find(
+          (item) => 'url' in item && item.url === '/department-wallets'
+        )
+        if (deptItem) {
+          const existingAdmin = groups.find((g) => g.id === 'admin')
+          if (existingAdmin) {
+            return groups.map((g) =>
+              g.id === 'admin' ? { ...g, items: [...g.items, deptItem] } : g
+            )
+          }
+          return [
+            ...groups,
+            { id: 'admin', title: sourceAdmin?.title ?? 'Admin', items: [deptItem] },
+          ]
+        }
+      }
+    }
+
+    return groups
+  }, [
+    configFilteredRoot,
+    rootSidebarData.navGroups,
+    userRole,
+    isDepartmentManager,
+  ])
 
   const view = resolveSidebarView(pathname)
 

@@ -130,6 +130,26 @@ export function auditFieldLabel(key: string, t: TFunction): string {
       return t('Username')
     case 'target_user_id':
       return t('User ID')
+    case 'target_user_label':
+      return t('Target username')
+    case 'target_username':
+      return t('Target username')
+    case 'department_id':
+      return t('Department ID')
+    case 'department_label':
+      return t('Department name')
+    case 'to_department_id':
+      return t('Target department ID')
+    case 'to_department_label':
+      return t('Target department name')
+    case 'requested_quota':
+      return t('Requested quota')
+    case 'requested_quota_display':
+      return t('Display amount')
+    case 'remark':
+      return t('Remark')
+    case 'row_count':
+      return t('Row count')
     case 'plan_id':
       return t('Plan ID')
     case 'plan_title':
@@ -194,6 +214,20 @@ export function auditFieldLabel(key: string, t: TFunction): string {
       return t('Admin permissions updated')
     case 'provider_id':
       return t('Provider ID')
+    case 'success':
+      return t('Success')
+    case 'confirmed':
+      return t('Confirmed')
+    case 'domains':
+      return t('Domains')
+    case 'known':
+      return t('Known')
+    case 'unknown':
+      return t('Unknown')
+    case 'code':
+      return t('Code')
+    case 'mode':
+      return t('Mode')
     default:
       return key
   }

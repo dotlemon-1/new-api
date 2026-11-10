@@ -104,19 +104,45 @@ func (p *GenericOAuthProvider) ExchangeToken(ctx context.Context, code string, c
 		authStyle = AuthStyleInParams
 	}
 
-	var req *http.Request
-	var err error
+	method := strings.ToUpper(strings.TrimSpace(p.config.TokenEndpointMethod))
+	if method == "" {
+		method = http.MethodPost
+	}
+	if method != http.MethodGet && method != http.MethodPost {
+		return nil, NewOAuthError(common.NewMessage(msgTokenFailed, map[string]any{"provider": p.config.Name}))
+	}
 
 	if authStyle == AuthStyleInParams {
 		values.Set("client_id", p.config.ClientId)
 		values.Set("client_secret", p.config.ClientSecret)
 	}
 
-	req, err = http.NewRequestWithContext(ctx, "POST", p.config.TokenEndpoint, strings.NewReader(values.Encode()))
+	var req *http.Request
+	var err error
+	if method == http.MethodGet {
+		// Legacy SSO servers (for example some Spring OAuth deployments) expect
+		// query parameters on a GET, matching their working client integrations.
+		tokenURL, parseErr := url.Parse(p.config.TokenEndpoint)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		query := tokenURL.Query()
+		for key, vals := range values {
+			for _, val := range vals {
+				query.Set(key, val)
+			}
+		}
+		tokenURL.RawQuery = query.Encode()
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, tokenURL.String(), nil)
+	} else {
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, p.config.TokenEndpoint, strings.NewReader(values.Encode()))
+	}
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if method == http.MethodPost {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 	req.Header.Set("Accept", "application/json")
 
 	if authStyle == AuthStyleInHeader {
@@ -125,8 +151,8 @@ func (p *GenericOAuthProvider) ExchangeToken(ctx context.Context, code string, c
 		req.Header.Set("Authorization", "Basic "+credentials)
 	}
 
-	logger.LogDebug(ctx, "[OAuth-Generic-%s] ExchangeToken: token_endpoint=%s, redirect_uri=%s, auth_style=%d",
-		p.config.Slug, p.config.TokenEndpoint, redirectUri, authStyle)
+	logger.LogDebug(ctx, "[OAuth-Generic-%s] ExchangeToken: method=%s, token_endpoint=%s, redirect_uri=%s, auth_style=%d",
+		p.config.Slug, method, p.config.TokenEndpoint, redirectUri, authStyle)
 
 	client := http.Client{
 		Timeout: 20 * time.Second,
@@ -158,6 +184,7 @@ func (p *GenericOAuthProvider) ExchangeToken(ctx context.Context, code string, c
 		IDToken      string `json:"id_token"`
 		Error        string `json:"error"`
 		ErrorDesc    string `json:"error_description"`
+		Message      string `json:"message"` // Spring Security style detail
 	}
 
 	if err := common.Unmarshal(body, &tokenResponse); err != nil {
@@ -172,10 +199,14 @@ func (p *GenericOAuthProvider) ExchangeToken(ctx context.Context, code string, c
 		tokenResponse.Scope = parsedValues.Get("scope")
 	}
 
-	if tokenResponse.Error != "" {
-		logger.LogError(ctx, common.LogText("[OAuth-Generic-%s] ExchangeToken OAuth error: %s - %s",
-			p.config.Slug, tokenResponse.Error, tokenResponse.ErrorDesc))
-		return nil, NewOAuthErrorWithRaw(common.NewMessage(msgTokenFailed, map[string]any{"provider": p.config.Name}), tokenResponse.ErrorDesc)
+	if tokenResponse.Error != "" || (res.StatusCode >= 400 && tokenResponse.AccessToken == "") {
+		detail := tokenResponse.ErrorDesc
+		if detail == "" {
+			detail = tokenResponse.Message
+		}
+		logger.LogError(ctx, common.LogText("[OAuth-Generic-%s] ExchangeToken OAuth error: status=%d error=%s",
+			p.config.Slug, res.StatusCode, tokenResponse.Error))
+		return nil, NewOAuthErrorWithRaw(common.NewMessage(msgTokenFailed, map[string]any{"provider": p.config.Name}), detail)
 	}
 
 	if tokenResponse.AccessToken == "" {
@@ -233,16 +264,21 @@ func (p *GenericOAuthProvider) GetUserInfo(ctx context.Context, token *OAuthToke
 
 	bodyStr := string(body)
 
+	userIdPath := normalizeGjsonPath(p.config.UserIdField)
+	usernamePath := normalizeGjsonPath(p.config.UsernameField)
+	displayNamePath := normalizeGjsonPath(p.config.DisplayNameField)
+	emailPath := normalizeGjsonPath(p.config.EmailField)
+
 	// Extract fields using gjson (supports JSONPath-like syntax)
-	userId := gjson.Get(bodyStr, p.config.UserIdField).String()
-	username := gjson.Get(bodyStr, p.config.UsernameField).String()
-	displayName := gjson.Get(bodyStr, p.config.DisplayNameField).String()
-	email := gjson.Get(bodyStr, p.config.EmailField).String()
+	userId := gjson.Get(bodyStr, userIdPath).String()
+	username := gjson.Get(bodyStr, usernamePath).String()
+	displayName := gjson.Get(bodyStr, displayNamePath).String()
+	email := gjson.Get(bodyStr, emailPath).String()
 
 	// If user ID field returns a number, convert it
 	if userId == "" {
 		// Try to get as number
-		userIdNum := gjson.Get(bodyStr, p.config.UserIdField)
+		userIdNum := gjson.Get(bodyStr, userIdPath)
 		if userIdNum.Exists() {
 			userId = userIdNum.Raw
 			// Remove quotes if present
@@ -255,8 +291,7 @@ func (p *GenericOAuthProvider) GetUserInfo(ctx context.Context, token *OAuthToke
 		return nil, NewOAuthError(common.NewMessage(msgUserInfoEmpty, map[string]any{"provider": p.config.Name}))
 	}
 
-	logger.LogDebug(ctx, "[OAuth-Generic-%s] GetUserInfo success: id=%s, username=%s, name=%s, email=%s",
-		p.config.Slug, userId, username, displayName, email)
+	logger.LogDebug(ctx, "[OAuth-Generic-%s] GetUserInfo success: id=%s", p.config.Slug, userId)
 
 	policyRaw := strings.TrimSpace(p.config.AccessPolicy)
 	if policyRaw != "" {
@@ -274,14 +309,31 @@ func (p *GenericOAuthProvider) GetUserInfo(ctx context.Context, token *OAuthToke
 		}
 	}
 
+	extra := map[string]any{
+		"provider": p.config.Slug,
+	}
+	if p.config.DepartmentLinkEnabled {
+		deptPath := normalizeGjsonPath(p.config.DepartmentField)
+		if deptPath != "" {
+			deptRaw := gjson.Get(bodyStr, deptPath)
+			deptValue := deptRaw.String()
+			if deptValue == "" && deptRaw.Exists() {
+				deptValue = strings.Trim(deptRaw.Raw, "\"")
+			}
+			if deptValue != "" {
+				extra["department_match_value"] = deptValue
+			} else {
+				logger.LogWarn(ctx, common.LogText("[OAuth-Generic-%s] department field empty (path: %s)", p.config.Slug, deptPath))
+			}
+		}
+	}
+
 	return &OAuthUser{
 		ProviderUserID: userId,
 		Username:       username,
 		DisplayName:    displayName,
 		Email:          email,
-		Extra: map[string]any{
-			"provider": p.config.Slug,
-		},
+		Extra:          extra,
 	}, nil
 }
 
@@ -323,6 +375,18 @@ func normalizeAuthorizationTokenType(tokenType string) string {
 		return "Bearer"
 	}
 	return tokenType
+}
+
+// normalizeGjsonPath converts JSONPath-like array indexes (foo[0].bar) into
+// gjson syntax (foo.0.bar). gjson does not treat [n] as an array index.
+var gjsonBracketIndexPattern = regexp.MustCompile(`\[(\d+)\]`)
+
+func normalizeGjsonPath(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return ""
+	}
+	return gjsonBracketIndexPattern.ReplaceAllString(path, ".$1")
 }
 
 // IsGenericProvider returns true for generic providers

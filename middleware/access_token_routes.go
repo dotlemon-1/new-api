@@ -143,6 +143,24 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/subscription/admin/user_subscriptions/:id/invalidate": accessTokenScopeRule("billing:write"),
 	"DELETE /api/subscription/admin/user_subscriptions/:id":          accessTokenScopeRule("billing:write"),
 
+	// router/api-router.go: /api/department
+	"GET /api/department/":                        accessTokenScopeRule("billing:read"),
+	"GET /api/department/users/search":             accessTokenScopeRule("billing:read"),
+	"GET /api/department/members/unassigned":       accessTokenScopeRule("billing:read"),
+	"POST /api/department/sync":                   accessTokenScopeRule("billing:write"),
+	"GET /api/department/:id/wallet":              accessTokenScopeRule("billing:read"),
+	"GET /api/department/:id/ledger":              accessTokenScopeRule("billing:read"),
+	"GET /api/department/:id/members":             accessTokenScopeRule("billing:read"),
+	"POST /api/department/:id/members":            accessTokenScopeRule("billing:write"),
+	"DELETE /api/department/members/:userId":      accessTokenScopeRule("billing:write"),
+	"POST /api/department/:id/topup":              accessTokenScopeRule("billing:write"),
+	"POST /api/department/:id/grant":              accessTokenScopeRule("billing:write"),
+	"POST /api/department/:id/transfer":           accessTokenScopeRule("billing:write"),
+	"POST /api/department/:id/reclaim":            accessTokenScopeRule("billing:write"),
+	"GET /api/department/:id/managers":            accessTokenScopeRule("billing:read"),
+	"POST /api/department/:id/managers":           accessTokenScopeRule("billing:write"),
+	"DELETE /api/department/:id/managers/:userId": accessTokenScopeRule("billing:write"),
+
 	// router/api-router.go: /api/option
 	"GET /api/option/":                                           accessTokenScopeRule("option:read"),
 	"GET /api/option/request_policy":                             accessTokenScopeRule("option:read"),

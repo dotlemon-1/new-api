@@ -154,6 +154,10 @@ export function SidebarModulesSection({
         title: t('Users'),
         description: t('Administer user accounts and roles.'),
       },
+      department: {
+        title: t('Department Wallets'),
+        description: t('Sync departments and manage department quota pools.'),
+      },
       setting: {
         title: t('System settings'),
         description: t('Advanced platform configuration.'),

@@ -158,6 +158,14 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
                   <span className='truncate'>{profile.group}</span>
                 </>
               )}
+              <span>•</span>
+              <span className='truncate'>
+                {profile.department
+                  ? profile.department.external_no
+                    ? `${profile.department.name} (${profile.department.external_no})`
+                    : profile.department.name
+                  : t('Unassigned department')}
+              </span>
             </div>
           </div>
         </div>

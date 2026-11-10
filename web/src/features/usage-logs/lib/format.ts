@@ -24,6 +24,7 @@ import {
   splitBillingExprAndRequestRules,
   type ParsedTier,
 } from '@/features/pricing/lib/billing-expr'
+import { formatLogQuota } from '@/lib/format'
 import { translateServerText } from '@/lib/server-error-message'
 
 import type { UsageLog } from '../data/schema'
@@ -482,6 +483,23 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   'user.quota_add': 'Increased user quota by {{quota}}',
   'user.quota_subtract': 'Decreased user quota by {{quota}}',
   'user.quota_override': 'Overrode user quota from {{from}} to {{to}}',
+  'department.sync': '同步了 {{row_count}} 个 HR 部门',
+  'department.quota_topup':
+    '为部门 {{department_label}} 充值 {{requested_quota}}',
+  'department.quota_grant':
+    '从部门 {{department_label}} 向用户 {{target_user_label}} 发放 {{requested_quota}}',
+  'department.quota_transfer':
+    '从部门 {{department_label}} 向部门 {{to_department_label}} 划拨 {{requested_quota}}',
+  'department.quota_reclaim':
+    '从用户 {{target_user_label}} 回收 {{requested_quota}} 到部门 {{department_label}}',
+  'department.manager_assign':
+    '将用户 {{target_user_label}} 指派为部门 {{department_label}} 的管理人',
+  'department.manager_remove':
+    '移除部门 {{department_label}} 的管理人用户 {{target_user_label}}',
+  'department.member_set':
+    '将用户 {{target_user_label}} 挂靠到部门 {{department_label}}',
+  'department.member_clear':
+    '取消用户 {{target_user_label}} 的部门挂靠',
   'user.binding_clear': 'Cleared {{bindingType}} binding for user {{username}}',
   'user.2fa_disable': 'Force-disabled two-factor authentication for the user',
   'user.passkey_register': 'Registered a passkey',
@@ -636,5 +654,45 @@ export function renderAuditContent(
     return `${quotaOperation.summary} · ${quotaOperation.description}`
   }
   const params = { ...op.params }
+  if (op.action.startsWith('department.')) {
+    if (
+      typeof params.requested_quota_display === 'string' &&
+      params.requested_quota_display
+    ) {
+      params.requested_quota = params.requested_quota_display
+    } else if (
+      typeof params.requested_quota === 'number' &&
+      Number.isFinite(params.requested_quota)
+    ) {
+      params.requested_quota = formatLogQuota(params.requested_quota)
+    }
+    if (
+      (params.department_label === undefined ||
+        params.department_label === '') &&
+      params.department_id !== undefined &&
+      params.department_id !== null &&
+      params.department_id !== ''
+    ) {
+      params.department_label = String(params.department_id)
+    }
+    if (
+      (params.target_user_label === undefined ||
+        params.target_user_label === '') &&
+      params.target_user_id !== undefined &&
+      params.target_user_id !== null &&
+      params.target_user_id !== ''
+    ) {
+      params.target_user_label = String(params.target_user_id)
+    }
+    if (
+      (params.to_department_label === undefined ||
+        params.to_department_label === '') &&
+      params.to_department_id !== undefined &&
+      params.to_department_id !== null &&
+      params.to_department_id !== ''
+    ) {
+      params.to_department_label = String(params.to_department_id)
+    }
+  }
   return t(template, params)
 }

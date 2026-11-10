@@ -34,6 +34,12 @@ export interface ApiResponse<T = unknown> {
 /**
  * User profile data
  */
+export interface UserDepartment {
+  id: number
+  name: string
+  external_no: string
+}
+
 export interface UserProfile {
   has_password?: boolean
   permissions?: UserPermissions
@@ -85,6 +91,10 @@ export interface UserProfile {
   telegram_id?: string
   /** LinuxDO ID (OAuth) */
   linux_do_id?: string
+  /** Assigned department; null/undefined when unassigned */
+  department?: UserDepartment | null
+  /** Whether the user manages any department wallet */
+  is_department_manager?: boolean
 }
 
 /**

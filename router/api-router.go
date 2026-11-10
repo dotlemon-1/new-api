@@ -204,6 +204,31 @@ func SetApiRouter(router *gin.Engine) {
 			subscriptionAdminRoute.DELETE("/user_subscriptions/:id", controller.AdminDeleteUserSubscription)
 		}
 
+		departmentAdminRoute := apiRouter.Group("/department")
+		departmentAdminRoute.Use(middleware.AdminAuth())
+		{
+			departmentAdminRoute.POST("/sync", controller.SyncDepartments)
+			departmentAdminRoute.POST("/:id/topup", controller.TopupDepartment)
+			departmentAdminRoute.POST("/:id/managers", controller.AssignDepartmentManager)
+			departmentAdminRoute.DELETE("/:id/managers/:userId", controller.RemoveDepartmentManager)
+			departmentAdminRoute.POST("/:id/members", controller.SetDepartmentMember)
+			departmentAdminRoute.DELETE("/members/:userId", controller.ClearDepartmentMember)
+			departmentAdminRoute.GET("/members/unassigned", controller.ListUnassignedDepartmentMembers)
+		}
+		departmentRoute := apiRouter.Group("/department")
+		departmentRoute.Use(middleware.UserAuth())
+		{
+			departmentRoute.GET("/", controller.GetDepartments)
+			departmentRoute.GET("/users/search", controller.SearchDepartmentGrantUsers)
+			departmentRoute.GET("/:id/wallet", controller.GetDepartmentWallet)
+			departmentRoute.GET("/:id/ledger", controller.GetDepartmentLedger)
+			departmentRoute.GET("/:id/members", controller.ListDepartmentMembers)
+			departmentRoute.GET("/:id/managers", controller.ListDepartmentManagers)
+			departmentRoute.POST("/:id/grant", controller.GrantDepartmentQuota)
+			departmentRoute.POST("/:id/transfer", controller.TransferDepartmentQuota)
+			departmentRoute.POST("/:id/reclaim", controller.ReclaimDepartmentQuota)
+		}
+
 		// Subscription payment callbacks (no auth)
 		apiRouter.POST("/subscription/epay/notify", anonymousRequestBodyLimit, controller.SubscriptionEpayNotify)
 		apiRouter.GET("/subscription/epay/notify", controller.SubscriptionEpayNotify)

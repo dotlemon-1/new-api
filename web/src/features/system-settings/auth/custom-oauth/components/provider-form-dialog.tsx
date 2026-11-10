@@ -60,6 +60,8 @@ import {
 import {
   customOAuthFormSchema,
   AUTH_STYLE_OPTIONS,
+  DEPARTMENT_MATCH_FIELD_OPTIONS,
+  TOKEN_ENDPOINT_METHOD_OPTIONS,
   type CustomOAuthProvider,
   type CustomOAuthFormValues,
 } from '../types'
@@ -106,11 +108,19 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
       email_field: '',
       well_known: '',
       auth_style: 0,
+      token_endpoint_method: 'POST',
       access_policy: '',
       access_denied_message: '',
+      department_link_enabled: false,
+      department_field: '',
+      department_match_field: 'external_no',
     },
   })
   const watchedSlug = useWatch({ control: form.control, name: 'slug' })
+  const departmentLinkEnabled = useWatch({
+    control: form.control,
+    name: 'department_link_enabled',
+  })
   const callbackPath = watchedSlug?.trim() || '{slug}'
   const callbackUrl = buildOAuthCallbackUrl(
     props.serverAddress,
@@ -137,8 +147,17 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
         email_field: props.provider.email_field || '',
         well_known: props.provider.well_known || '',
         auth_style: props.provider.auth_style ?? 0,
+        token_endpoint_method:
+          props.provider.token_endpoint_method === 'GET' ? 'GET' : 'POST',
         access_policy: props.provider.access_policy || '',
         access_denied_message: props.provider.access_denied_message || '',
+        department_link_enabled:
+          props.provider.department_link_enabled ?? false,
+        department_field: props.provider.department_field || '',
+        department_match_field:
+          props.provider.department_match_field === 'external_id'
+            ? 'external_id'
+            : 'external_no',
       })
     } else if (props.open && !props.provider) {
       form.reset({
@@ -158,8 +177,12 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
         email_field: '',
         well_known: '',
         auth_style: 0,
+        token_endpoint_method: 'POST',
         access_policy: '',
         access_denied_message: '',
+        department_link_enabled: false,
+        department_field: '',
+        department_match_field: 'external_no',
       })
     }
   }, [props.open, props.provider, form])
@@ -418,6 +441,45 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name='token_endpoint_method'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Token endpoint method')}</FormLabel>
+                  <Select
+                    items={TOKEN_ENDPOINT_METHOD_OPTIONS.map((option) => ({
+                      value: option.value,
+                      label: t(option.labelKey),
+                    }))}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger className='w-full'>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent alignItemWithTrigger={false}>
+                      <SelectGroup>
+                        {TOKEN_ENDPOINT_METHOD_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {t(
+                      'Use GET only for legacy SSO servers that reject standard POST token exchange'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <Separator />
@@ -593,6 +655,103 @@ export function ProviderFormDialog(props: ProviderFormDialogProps) {
                 )}
               />
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Department Link */}
+          <div className='space-y-4'>
+            <h4 className='text-sm font-medium'>{t('Department Link')}</h4>
+            <FormField
+              control={form.control}
+              name='department_link_enabled'
+              render={({ field }) => (
+                <SettingsSwitchItem>
+                  <SettingsSwitchContent>
+                    <FormLabel>{t('Link user to department')}</FormLabel>
+                    <FormDescription>
+                      {t(
+                        'When enabled, unassigned users are linked to a department on SSO login if the mapped value matches.'
+                      )}
+                    </FormDescription>
+                  </SettingsSwitchContent>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </SettingsSwitchItem>
+              )}
+            />
+
+            {departmentLinkEnabled ? (
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                <FormField
+                  control={form.control}
+                  name='department_field'
+                  render={({ field }) => (
+                    <FormItem className='sm:col-span-2'>
+                      <FormLabel>{t('User department field')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='data.userDepartments[0].department.deptNo'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t(
+                          'Path in user info. Use [0] or .0 for arrays, e.g. data.userDepartments[0].department.deptNo'
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name='department_match_field'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Department match field')}</FormLabel>
+                      <Select
+                        items={DEPARTMENT_MATCH_FIELD_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: t(option.labelKey),
+                        }))}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className='w-full'>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent alignItemWithTrigger={false}>
+                          <SelectGroup>
+                            {DEPARTMENT_MATCH_FIELD_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {t(option.labelKey)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t(
+                          'Local department field used to match the value from user info'
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : null}
           </div>
 
           <Separator />

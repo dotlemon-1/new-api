@@ -339,8 +339,46 @@ func handleOAuthLogin(c *gin.Context, provider oauth.Provider, oauthUser *oauth.
 		return
 	}
 
+	// Link department from userinfo when configured and the user is still unassigned.
+	maybeLinkOAuthDepartment(provider, oauthUser, user.Id)
+
 	// 9. Setup login
 	setupLogin(user, migration, c)
+}
+
+// maybeLinkOAuthDepartment assigns an unassigned user to a department from
+// custom OAuth userinfo. Missing values or unmatched departments are skipped
+// silently so login is never blocked.
+func maybeLinkOAuthDepartment(provider oauth.Provider, oauthUser *oauth.OAuthUser, userId int) {
+	generic, ok := provider.(*oauth.GenericOAuthProvider)
+	if !ok || oauthUser == nil || userId <= 0 {
+		return
+	}
+	cfg := generic.GetConfig()
+	if cfg == nil || !cfg.DepartmentLinkEnabled {
+		return
+	}
+	currentDeptID, err := model.GetUserDepartmentID(userId)
+	if err != nil || currentDeptID > 0 {
+		return
+	}
+	matchValue, _ := oauthUser.Extra["department_match_value"].(string)
+	matchValue = strings.TrimSpace(matchValue)
+	if matchValue == "" {
+		return
+	}
+	dept, err := model.GetDepartmentByMatchField(cfg.DepartmentMatchField, matchValue)
+	if err != nil {
+		common.SysLog(common.LogText("oauth department link skipped: user_id=%d match_field=%s match_value=%s error=%s",
+			userId, cfg.DepartmentMatchField, matchValue, err.Error()))
+		return
+	}
+	if err := model.SetDepartmentMember(dept.Id, userId); err != nil {
+		common.SysError(common.LogText("oauth department link failed: user_id=%d department_id=%d error=%s",
+			userId, dept.Id, err.Error()))
+		return
+	}
+	common.SysLog(common.LogText("oauth department link success: user_id=%d department_id=%d", userId, dept.Id))
 }
 
 // handleOAuthBind handles binding OAuth account to existing user

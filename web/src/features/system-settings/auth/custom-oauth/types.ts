@@ -40,8 +40,12 @@ export interface CustomOAuthProvider {
   email_field: string
   well_known: string
   auth_style: number // 0=auto, 1=params, 2=header
+  token_endpoint_method: string // POST (default) or GET
   access_policy: string
   access_denied_message: string
+  department_link_enabled: boolean
+  department_field: string
+  department_match_field: 'external_no' | 'external_id'
 }
 
 // ============================================================================
@@ -73,11 +77,31 @@ export const customOAuthFormSchema = z.object({
   email_field: z.string().optional().default(''),
   well_known: z.string().optional().default(''),
   auth_style: z.number().int().min(0).max(2).default(0),
+  token_endpoint_method: z.enum(['POST', 'GET']).default('POST'),
   access_policy: z.string().optional().default(''),
   access_denied_message: z.string().optional().default(''),
+  department_link_enabled: z.boolean().default(false),
+  department_field: z.string().optional().default(''),
+  department_match_field: z.enum(['external_no', 'external_id']).default('external_no'),
+}).superRefine((values, ctx) => {
+  if (
+    values.department_link_enabled &&
+    !values.department_field.trim()
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['department_field'],
+      message: 'Department field is required when department link is enabled',
+    })
+  }
 })
 
 export type CustomOAuthFormValues = z.infer<typeof customOAuthFormSchema>
+
+export const DEPARTMENT_MATCH_FIELD_OPTIONS = [
+  { value: 'external_no', labelKey: 'Department number (external_no)' },
+  { value: 'external_id', labelKey: 'External ID (external_id)' },
+] as const
 
 // ============================================================================
 // OIDC Discovery
@@ -221,4 +245,9 @@ export const AUTH_STYLE_OPTIONS = [
   { value: 0, labelKey: 'Auto Detect' },
   { value: 1, labelKey: 'Params (in body)' },
   { value: 2, labelKey: 'Header (Basic Auth)' },
+] as const
+
+export const TOKEN_ENDPOINT_METHOD_OPTIONS = [
+  { value: 'POST', labelKey: 'POST' },
+  { value: 'GET', labelKey: 'GET' },
 ] as const

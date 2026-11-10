@@ -18,14 +18,26 @@ import (
 // action 的 params 填充。本地化展示文案在前端 i18n 模板中维护，本表是语言中立的
 // 英文基线——调用方因此无需在每个埋点处手写句子（避免与 params 重复书写同一份值）。
 var auditContentTemplates = map[string]string{
-	"user.create":               "Created user ${username} (role ${role})",
-	"user.update":               "Updated user ${username} (ID: ${id})",
-	"user.delete":               "Deleted user ${username} (ID: ${id})",
-	"user.account_delete":       "Account deletion",
-	"user.manage":               "Performed ${action} on user ${username} (ID: ${id})",
-	"user.quota_add":            "Increased user quota by ${quota}",
-	"user.quota_subtract":       "Decreased user quota by ${quota}",
-	"user.quota_override":       "Overrode user quota from ${from} to ${to}",
+	"user.create":         "Created user ${username} (role ${role})",
+	"user.update":         "Updated user ${username} (ID: ${id})",
+	"user.delete":         "Deleted user ${username} (ID: ${id})",
+	"user.account_delete": "Account deletion",
+	"user.manage":         "Performed ${action} on user ${username} (ID: ${id})",
+	"user.quota_add":      "Increased user quota by ${quota}",
+	"user.quota_subtract": "Decreased user quota by ${quota}",
+	"user.quota_override": "Overrode user quota from ${from} to ${to}",
+	// Department wallet audits store Chinese content by product requirement.
+	// Labels prefer names (「集团」); IDs remain in params for structured data.
+	// Quota amounts use requested_quota_display (currency), not raw quota units.
+	"department.sync":           "同步了 ${row_count} 个 HR 部门",
+	"department.quota_topup":    "为部门 ${department_label} 充值 ${requested_quota_display}",
+	"department.quota_grant":    "从部门 ${department_label} 向用户 ${target_user_label} 发放 ${requested_quota_display}",
+	"department.manager_assign": "将用户 ${target_user_label} 指派为部门 ${department_label} 的管理人",
+	"department.manager_remove": "移除部门 ${department_label} 的管理人用户 ${target_user_label}",
+	"department.quota_transfer": "从部门 ${department_label} 向部门 ${to_department_label} 划拨 ${requested_quota_display}",
+	"department.quota_reclaim":  "从用户 ${target_user_label} 回收 ${requested_quota_display} 到部门 ${department_label}",
+	"department.member_set":     "将用户 ${target_user_label} 挂靠到部门 ${department_label}",
+	"department.member_clear":   "取消用户 ${target_user_label} 的部门挂靠",
 	"user.binding_clear":        "Cleared ${bindingType} binding for user ${username}",
 	"user.2fa_disable":          "Force-disabled two-factor authentication for the user",
 	"user.passkey_register":     "Registered a passkey",

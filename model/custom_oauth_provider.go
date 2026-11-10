@@ -56,9 +56,15 @@ type CustomOAuthProvider struct {
 	DisplayNameField string `json:"display_name_field" gorm:"type:varchar(128);default:'name'"`           // Display name field path
 	EmailField       string `json:"email_field" gorm:"type:varchar(128);default:'email'"`                 // Email field path
 
+	// Optional user ↔ department association from userinfo (gjson path + local match field).
+	DepartmentLinkEnabled bool   `json:"department_link_enabled"`
+	DepartmentField       string `json:"department_field" gorm:"type:varchar(256)"`      // e.g. data.userDepartments[0].department.deptNo
+	DepartmentMatchField  string `json:"department_match_field" gorm:"type:varchar(32)"` // external_no | external_id
+
 	// Advanced options
 	WellKnown           string `json:"well_known" gorm:"type:varchar(512)"`            // OIDC discovery endpoint (optional)
 	AuthStyle           int    `json:"auth_style" gorm:"default:0"`                    // 0=auto, 1=params, 2=header (Basic Auth)
+	TokenEndpointMethod string `json:"token_endpoint_method" gorm:"type:varchar(8)"`   // POST (default) or GET; some legacy SSO servers require GET
 	AccessPolicy        string `json:"access_policy" gorm:"type:text"`                 // JSON policy for access control based on user info
 	AccessDeniedMessage string `json:"access_denied_message" gorm:"type:varchar(512)"` // Custom error message template when access is denied
 
@@ -193,6 +199,21 @@ func validateCustomOAuthProvider(provider *CustomOAuthProvider) error {
 	}
 	if provider.Scopes == "" {
 		provider.Scopes = "openid profile email"
+	}
+	provider.DepartmentField = strings.TrimSpace(provider.DepartmentField)
+	provider.DepartmentMatchField = strings.ToLower(strings.TrimSpace(provider.DepartmentMatchField))
+	if provider.DepartmentLinkEnabled {
+		if provider.DepartmentField == "" {
+			return errors.New("department field is required when department link is enabled")
+		}
+		if provider.DepartmentMatchField == "" {
+			provider.DepartmentMatchField = "external_no"
+		}
+		if provider.DepartmentMatchField != "external_no" && provider.DepartmentMatchField != "external_id" {
+			return errors.New("department match field must be external_no or external_id")
+		}
+	} else if provider.DepartmentMatchField == "" {
+		provider.DepartmentMatchField = "external_no"
 	}
 	if strings.TrimSpace(provider.AccessPolicy) != "" {
 		var policy accessPolicyPayload

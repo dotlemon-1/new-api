@@ -37,8 +37,12 @@ type CustomOAuthProviderResponse struct {
 	EmailField            string `json:"email_field"`
 	WellKnown             string `json:"well_known"`
 	AuthStyle             int    `json:"auth_style"`
+	TokenEndpointMethod   string `json:"token_endpoint_method"`
 	AccessPolicy          string `json:"access_policy"`
 	AccessDeniedMessage   string `json:"access_denied_message"`
+	DepartmentLinkEnabled bool   `json:"department_link_enabled"`
+	DepartmentField       string `json:"department_field"`
+	DepartmentMatchField  string `json:"department_match_field"`
 }
 
 type UserOAuthBindingResponse struct {
@@ -67,8 +71,12 @@ func toCustomOAuthProviderResponse(p *model.CustomOAuthProvider) *CustomOAuthPro
 		EmailField:            p.EmailField,
 		WellKnown:             p.WellKnown,
 		AuthStyle:             p.AuthStyle,
+		TokenEndpointMethod:   p.TokenEndpointMethod,
 		AccessPolicy:          p.AccessPolicy,
 		AccessDeniedMessage:   p.AccessDeniedMessage,
+		DepartmentLinkEnabled: p.DepartmentLinkEnabled,
+		DepartmentField:       p.DepartmentField,
+		DepartmentMatchField:  p.DepartmentMatchField,
 	}
 }
 
@@ -132,8 +140,12 @@ type CreateCustomOAuthProviderRequest struct {
 	EmailField            string `json:"email_field"`
 	WellKnown             string `json:"well_known"`
 	AuthStyle             int    `json:"auth_style"`
+	TokenEndpointMethod   string `json:"token_endpoint_method"`
 	AccessPolicy          string `json:"access_policy"`
 	AccessDeniedMessage   string `json:"access_denied_message"`
+	DepartmentLinkEnabled bool   `json:"department_link_enabled"`
+	DepartmentField       string `json:"department_field"`
+	DepartmentMatchField  string `json:"department_match_field"`
 }
 
 type FetchCustomOAuthDiscoveryRequest struct {
@@ -250,8 +262,12 @@ func CreateCustomOAuthProvider(c *gin.Context) {
 		EmailField:            req.EmailField,
 		WellKnown:             req.WellKnown,
 		AuthStyle:             req.AuthStyle,
+		TokenEndpointMethod:   req.TokenEndpointMethod,
 		AccessPolicy:          req.AccessPolicy,
 		AccessDeniedMessage:   req.AccessDeniedMessage,
+		DepartmentLinkEnabled: req.DepartmentLinkEnabled,
+		DepartmentField:       req.DepartmentField,
+		DepartmentMatchField:  req.DepartmentMatchField,
 	}
 
 	if err := model.CreateCustomOAuthProvider(provider); err != nil {
@@ -281,10 +297,14 @@ type UpdateCustomOAuthProviderRequest struct {
 	UsernameField         string  `json:"username_field"`
 	DisplayNameField      string  `json:"display_name_field"`
 	EmailField            string  `json:"email_field"`
-	WellKnown             *string `json:"well_known"`            // Optional: if nil, keep existing
-	AuthStyle             *int    `json:"auth_style"`            // Optional: if nil, keep existing
-	AccessPolicy          *string `json:"access_policy"`         // Optional: if nil, keep existing
-	AccessDeniedMessage   *string `json:"access_denied_message"` // Optional: if nil, keep existing
+	WellKnown             *string `json:"well_known"`              // Optional: if nil, keep existing
+	AuthStyle             *int    `json:"auth_style"`              // Optional: if nil, keep existing
+	TokenEndpointMethod   *string `json:"token_endpoint_method"`   // Optional: if nil, keep existing
+	AccessPolicy          *string `json:"access_policy"`           // Optional: if nil, keep existing
+	AccessDeniedMessage   *string `json:"access_denied_message"`   // Optional: if nil, keep existing
+	DepartmentLinkEnabled *bool   `json:"department_link_enabled"` // Optional: if nil, keep existing
+	DepartmentField       *string `json:"department_field"`        // Optional: if nil, keep existing
+	DepartmentMatchField  *string `json:"department_match_field"`  // Optional: if nil, keep existing
 }
 
 // UpdateCustomOAuthProvider updates an existing custom OAuth provider
@@ -373,11 +393,23 @@ func UpdateCustomOAuthProvider(c *gin.Context) {
 	if req.AuthStyle != nil {
 		provider.AuthStyle = *req.AuthStyle
 	}
+	if req.TokenEndpointMethod != nil {
+		provider.TokenEndpointMethod = *req.TokenEndpointMethod
+	}
 	if req.AccessPolicy != nil {
 		provider.AccessPolicy = *req.AccessPolicy
 	}
 	if req.AccessDeniedMessage != nil {
 		provider.AccessDeniedMessage = *req.AccessDeniedMessage
+	}
+	if req.DepartmentLinkEnabled != nil {
+		provider.DepartmentLinkEnabled = *req.DepartmentLinkEnabled
+	}
+	if req.DepartmentField != nil {
+		provider.DepartmentField = *req.DepartmentField
+	}
+	if req.DepartmentMatchField != nil {
+		provider.DepartmentMatchField = *req.DepartmentMatchField
 	}
 
 	if err := model.UpdateCustomOAuthProvider(provider); err != nil {
